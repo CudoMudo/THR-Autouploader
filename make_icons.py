@@ -2,8 +2,9 @@ from PIL import Image
 import os
 import sys
 
-webp_path = r"C:\Users\STRiT\Desktop\thr-core-header-logo.webp"
-icons_dir = r"C:\Users\STRiT\Desktop\THRuploader\frontend\src-tauri\icons"
+base_dir = os.path.dirname(os.path.abspath(__file__))
+webp_path = os.path.join(base_dir, "thr-core-header-logo.webp")
+icons_dir = os.path.join(base_dir, "frontend", "src-tauri", "icons")
 
 if not os.path.exists(webp_path):
     print(f"Error: Could not find {webp_path}")

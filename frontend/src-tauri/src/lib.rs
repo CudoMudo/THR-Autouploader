@@ -5,16 +5,35 @@ use tauri::{AppHandle, Emitter};
 use std::path::PathBuf;
 
 fn get_backend_dir() -> PathBuf {
-    let mut dir = std::env::current_exe()
+    // 1. Produkcija: backend je odmah pored .exe datoteke
+    let exe_dir = std::env::current_exe()
         .unwrap_or_else(|_| PathBuf::from("."))
         .parent()
         .unwrap_or_else(|| std::path::Path::new("."))
-        .join("backend");
-
-    if !dir.exists() {
-        dir = PathBuf::from(r"C:\Users\STRiT\Desktop\THRuploader\backend");
+        .to_path_buf();
+    
+    let prod_backend = exe_dir.join("backend");
+    if prod_backend.exists() {
+        return prod_backend;
     }
-    dir
+
+    // 2. Dev okruženje (bun run dev): traži relativno u odnosu na working directory
+    let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    
+    // Ako smo u frontend/src-tauri
+    let dev_1 = current_dir.join("../../backend");
+    if dev_1.exists() { return dev_1; }
+    
+    // Ako smo u frontend/
+    let dev_2 = current_dir.join("../backend");
+    if dev_2.exists() { return dev_2; }
+    
+    // Ako smo u rootu projekta
+    let dev_3 = current_dir.join("backend");
+    if dev_3.exists() { return dev_3; }
+
+    // Fallback ako ne nađe nigdje (sprječava hardkodiranje)
+    PathBuf::from("backend")
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
