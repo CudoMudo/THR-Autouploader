@@ -203,9 +203,9 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         config_content.push_str("\n# --- TAURI OVERRIDES ---\n");
         config_content.push_str("import os\n");
         config_content.push_str("if 'THR' not in config['TRACKERS']:\n    config['TRACKERS']['THR'] = {}\n");
-        config_content.push_str("config['DEFAULT']['slikethr_api_key'] = os.environ.get('SLIKETHR_API_KEY', '')\n");
-        config_content.push_str("config['TRACKERS']['THR']['api_key'] = os.environ.get('THR_API_KEY', '')\n");
-        config_content.push_str("config['DEFAULT']['tmdb_api'] = os.environ.get('TMDB_API_KEY', '')\n");
+        config_content.push_str("if os.environ.get('SLIKETHR_API_KEY'):\n    config['DEFAULT']['slikethr_api_key'] = os.environ.get('SLIKETHR_API_KEY')\n");
+        config_content.push_str("if os.environ.get('THR_API_KEY'):\n    config['TRACKERS']['THR']['api_key'] = os.environ.get('THR_API_KEY')\n");
+        config_content.push_str("if os.environ.get('TMDB_API_KEY'):\n    config['DEFAULT']['tmdb_api'] = os.environ.get('TMDB_API_KEY')\n");
         config_content.push_str("config['DEFAULT']['img_host_1'] = 'slikethr'\n");
         
         // Force default_torrent_client to the selected client
@@ -342,9 +342,9 @@ async fn dry_run_upload(
         config_content.push_str("\n# --- TAURI OVERRIDES ---\n");
         config_content.push_str("import os\n");
         config_content.push_str("if 'THR' not in config['TRACKERS']:\n    config['TRACKERS']['THR'] = {}\n");
-        config_content.push_str("config['DEFAULT']['slikethr_api_key'] = os.environ.get('SLIKETHR_API_KEY', '')\n");
-        config_content.push_str("config['TRACKERS']['THR']['api_key'] = os.environ.get('THR_API_KEY', '')\n");
-        config_content.push_str("config['DEFAULT']['tmdb_api'] = os.environ.get('TMDB_API_KEY', '')\n");
+        config_content.push_str("if os.environ.get('SLIKETHR_API_KEY'):\n    config['DEFAULT']['slikethr_api_key'] = os.environ.get('SLIKETHR_API_KEY')\n");
+        config_content.push_str("if os.environ.get('THR_API_KEY'):\n    config['TRACKERS']['THR']['api_key'] = os.environ.get('THR_API_KEY')\n");
+        config_content.push_str("if os.environ.get('TMDB_API_KEY'):\n    config['DEFAULT']['tmdb_api'] = os.environ.get('TMDB_API_KEY')\n");
         config_content.push_str("config['DEFAULT']['img_host_1'] = 'slikethr'\n");
         
         let _ = std::fs::write(&config_path, config_content);

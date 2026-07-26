@@ -163,10 +163,7 @@ function App() {
     if (!folderPath) return;
     
     if (!tmdbApiKey || tmdbApiKey.trim() === "") {
-      setLogs((prev) => [...prev, `[ERROR] TMDB API ključ nedostaje! Otiđi u Postavke (⚙️) i unesi TMDB API ključ prije odabira mape.`]);
-      // Optional: Otvori postavke automatski
-      // setShowSettings(true);
-      return;
+      setLogs((prev) => [...prev, `[SISTEM] TMDB API ključ nije unesen u GUI. Oslanjam se na backend config.py ako postoji.`]);
     }
 
     setSelectedFolder(folderPath);
@@ -217,8 +214,7 @@ function App() {
     if (!selectedFolder) return;
 
     if (!thrApiKey || thrApiKey.trim() === "" || !slikeApiKey || slikeApiKey.trim() === "") {
-      setLogs((prev) => [...prev, `[ERROR] THR ili Slike.THR API ključ nedostaje! Otiđi u Postavke (⚙️) i unesi sve potrebne ključeve prije uploada.`]);
-      return;
+      setLogs((prev) => [...prev, `[SISTEM] THR ili Slike.THR ključ nije unesen u GUI. Oslanjam se na backend config.py ako postoji.`]);
     }
 
     if (!apiId || apiId.trim() === "") {
