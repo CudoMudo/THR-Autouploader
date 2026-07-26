@@ -6,7 +6,9 @@ $ExeSource = Join-Path $ProjectRoot "frontend\src-tauri\target\release\thr_autou
 $BackendSource = Join-Path $ProjectRoot "backend"
 
 # Konfiguracija
-$ReleaseVersion = "1.3.2"
+$TauriConfPath = Join-Path $ProjectRoot "frontend\src-tauri\tauri.conf.json"
+$TauriConf = Get-Content -Raw -Path $TauriConfPath | ConvertFrom-Json
+$ReleaseVersion = $TauriConf.version
 $SourceDir = "C:\Users\STRiT\Desktop\THRuploader"
 $DesktopPath = [Environment]::GetFolderPath("Desktop")
 $TempReleaseFolder = "$DesktopPath\THRuploader_$ReleaseVersion"

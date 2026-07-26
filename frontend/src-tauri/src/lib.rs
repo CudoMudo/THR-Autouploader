@@ -338,6 +338,7 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         .env("SLIKETHR_API_KEY", &payload.slike_api_key)
         .env("THR_API_KEY", &payload.thr_api_key)
         .env("TMDB_API_KEY", &payload.tmdb_api_key)
+        .env("APP_VERSION", app.package_info().version.to_string())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -387,6 +388,7 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
 
 #[tauri::command]
 async fn dry_run_upload(
+    app: AppHandle,
     folder_path: String,
     tmdb_api_key: String,
     slike_api_key: String,
@@ -434,6 +436,7 @@ async fn dry_run_upload(
         .env("SLIKETHR_API_KEY", &slike_api_key)
         .env("THR_API_KEY", &thr_api_key)
         .env("TMDB_API_KEY", &tmdb_api_key)
+        .env("APP_VERSION", app.package_info().version.to_string())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 

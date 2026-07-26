@@ -627,7 +627,9 @@ class DescriptionBuilder:
 
         # UA Signature
         if not signature:
-            signature = "[center][size=1]Kreirano THR Autouploaderom[/size][/center]"
+            import os
+            app_version = os.environ.get("APP_VERSION", "1.0")
+            signature = f"[center][size=1]Kreirano THR Autouploaderom v{app_version}[/size][/center]"
             if self.tracker == "HUNO":
                 signature = signature.replace("[size=4]", "[size=8]")
         desc_parts.append(signature)
@@ -772,7 +774,7 @@ class DescriptionBuilder:
                     f"[url={web_url}][img={self.config['DEFAULT'].get('thumbnail_size', '350')}]{raw_url}[/img][/url] "
                 )
                 if screensPerRow and (img_index + 1) % screensPerRow == 0:
-                    desc_parts.append("")
+                    desc_parts.append("\n")
             desc_parts.append("[/center]")
             if each["type"] == "BDMV":
                 bdinfo_keys = [key for key in each if key.startswith("bdinfo")]
@@ -934,7 +936,7 @@ class DescriptionBuilder:
                         image_str = f"[url={web_url}][img={thumb_size}]{raw_url}[/img][/url]"
                         desc_parts.append(image_str)
                         if screensPerRow and (img_index + 1) % screensPerRow == 0:
-                            desc_parts.append("")
+                            desc_parts.append("\n")
                     desc_parts.append("[/center]\n\n")
                 else:
                     if multi_screens != 0:
@@ -1136,7 +1138,7 @@ class DescriptionBuilder:
                     f"[url={web_url}][img={self.config['DEFAULT'].get('thumbnail_size', '350')}]{raw_url}[/img][/url] "
                 )
                 if screensPerRow and (img_index + 1) % screensPerRow == 0:
-                    desc_parts.append("")
+                    desc_parts.append("\n")
             desc_parts.append("[/center]")
 
         # Handle multiple files case
@@ -1300,7 +1302,7 @@ class DescriptionBuilder:
                             desc_parts.append(image_str)
                             char_count += len(image_str)
                             if screensPerRow and (img_index + 1) % screensPerRow == 0:
-                                desc_parts.append("")
+                                desc_parts.append("\n")
                         desc_parts.append("[/center]\n\n")
                         char_count += len("[/center]\n\n")
                 elif multi_screens != 0 and new_images_key in meta and meta[new_images_key]:
@@ -1362,7 +1364,7 @@ class DescriptionBuilder:
                             f"[url={web_url}][img={self.config['DEFAULT'].get('thumbnail_size', '350')}]{raw_url}[/img][/url] "
                         )
                         if screensPerRow and (img_index + 1) % screensPerRow == 0:
-                            menu_parts.append("")
+                            menu_parts.append("\n")
                     menu_parts.append("[/center]\n\n")
                     menu_image_section = "".join(menu_parts)
         except Exception as e:
