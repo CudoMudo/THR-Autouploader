@@ -201,7 +201,11 @@ function App() {
         cleanError = "Ova datoteka nema audio traku (nepodržan format).";
       } else {
         // Fallback: očisti dugačke logove i prikaži samo bitno
-        cleanError = "Nisam pronašao metapodatke. Molimo popunite podatke ručno.";
+        if (rawError.includes("Configuration validation failed")) {
+           cleanError = "Greška u config.py postavkama: " + rawError.split("Configuration validation failed:")[1].substring(0, 150) + "...";
+        } else {
+           cleanError = "Nisam pronašao metapodatke. Detalji: " + rawError.substring(0, 100);
+        }
       }
       
       setLogs((prev) => [...prev, `[UPOZORENJE] ${cleanError}`]);

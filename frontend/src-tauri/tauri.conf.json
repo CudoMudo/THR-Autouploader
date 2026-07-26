@@ -14,7 +14,10 @@
       {
         "title": "THR Autouploader",
         "width": 1200,
-        "height": 970
+        "height": 1020,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
       }
     ],
     "security": {
