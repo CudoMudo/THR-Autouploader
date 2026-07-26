@@ -41,17 +41,20 @@ class THR:
         await self.edit_desc(meta)
         thr_name = unidecode(str(meta.get('name', '')).replace('DD+', 'DDP'))
 
-        # Confirm the correct naming order for THR
-        cli_ui.info(f"THR name: {thr_name}")
-        if not bool(meta.get('unattended', False)):
-            thr_confirm = cli_ui.ask_yes_no("Correct?", default=False)
-            if thr_confirm is not True:
+        # Manual Torrent Name Override (prioritet iz GUI-a/Rusta)
+        if meta.get('manual_name'):
+            thr_name = str(meta['manual_name'])
+            cli_ui.info(f"Using manual THR name override: {thr_name}")
+        else:
+            cli_ui.info(f"THR name: {thr_name}")
+
+            if meta.get('edit_name'):
+                cli_ui.info("Because the --edit parameter was provided, you now have the opportunity to change the name.")
                 thr_name_manually = cli_ui.ask_string("Please enter a proper name", default="") or ""
                 if thr_name_manually == "":
-                    console.print('No proper name given')
-                    console.print("Aborting...")
-                    return
+                    cli_ui.info("Name edit aborted or empty string entered. Reverting to automatic name.")
                 else:
+                    cli_ui.info(f"Using manual name: {thr_name_manually}")
                     thr_name = thr_name_manually
         torrent_name = re.sub(r"[^0-9a-zA-Z. '\-\[\]]+", " ", thr_name)
 

@@ -106,6 +106,7 @@ pub struct UploadPayload {
     is_anon: bool,
     skip_dupe_check: bool,
     keep_folder: bool,
+    manual_name: String,
 }
 
 #[tauri::command]
@@ -160,6 +161,11 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
     if !payload.resolution.is_empty() {
         args.push("-res".to_string());
         args.push(payload.resolution.clone());
+    }
+
+    if !payload.manual_name.is_empty() {
+        args.push("-name".to_string());
+        args.push(payload.manual_name.clone());
     }
     
     if payload.client_type == "none" {

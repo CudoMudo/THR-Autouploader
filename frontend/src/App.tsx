@@ -69,6 +69,7 @@ function App() {
   const [keepFolder, setKeepFolder] = useState(false);
 
   // Nove opcije
+  const [manualName, setManualName] = useState("");
   const [apiId, setApiId] = useState(""); // Univerzalni ID
   const [gameInstructions, setGameInstructions] = useState("");
   const [showValidation, setShowValidation] = useState(false);
@@ -255,7 +256,8 @@ function App() {
           tmdb_id: apiId,
           is_anon: isAnon,
           skip_dupe_check: skipDupeCheck,
-          keep_folder: keepFolder
+          keep_folder: keepFolder,
+          manual_name: manualName
         }
       });
     } catch (error) {
@@ -437,6 +439,16 @@ function App() {
           value={selectedFolder || ""} 
           onChange={(e) => setSelectedFolder(e.target.value)} 
           placeholder="Ili zalijepi apsolutnu putanju ručno (npr. C:\Filmovi\Avatar)" 
+          style={{ width: '100%', padding: '0.75rem', backgroundColor: '#0d0d12', border: '1px solid #333', color: '#f5f5f5', borderRadius: '6px' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: '1.5rem', width: '100%' }}>
+        <input 
+          type="text" 
+          value={manualName} 
+          onChange={(e) => setManualName(e.target.value)} 
+          placeholder="Ručni naziv torrenta (Opcionalno - ostavi prazno za Auto)" 
           style={{ width: '100%', padding: '0.75rem', backgroundColor: '#0d0d12', border: '1px solid #333', color: '#f5f5f5', borderRadius: '6px' }}
         />
       </div>

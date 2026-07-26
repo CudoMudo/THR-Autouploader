@@ -5,10 +5,12 @@ $ProjectRoot = $PSScriptRoot
 $ExeSource = Join-Path $ProjectRoot "frontend\src-tauri\target\release\thr_autouploader.exe"
 $BackendSource = Join-Path $ProjectRoot "backend"
 
-# Radimo u folderu *iznad* projekta kako ne bismo spremali stvari sami u sebe
-$ParentDir = Split-Path -Path $ProjectRoot -Parent
-$TempReleaseFolder = Join-Path $ParentDir "THRuploader_1.2"
-$OutZip = Join-Path $ParentDir "THRuploader_v1.2_Portable.zip"
+# Konfiguracija
+$ReleaseVersion = "1.3"
+$SourceDir = "C:\Users\STRiT\Desktop\THRuploader"
+$DesktopPath = [Environment]::GetFolderPath("Desktop")
+$TempReleaseFolder = "$DesktopPath\THRuploader_$ReleaseVersion"
+$OutZip = "$DesktopPath\THRuploader_v$($ReleaseVersion)_Portable.zip"
 
 Write-Host "Pripremam Portable Release..." -ForegroundColor Cyan
 
