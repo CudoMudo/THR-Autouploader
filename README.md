@@ -1,4 +1,7 @@
-﻿# THRuploader
+<img width="1198" height="998" alt="thr_autouploader_EYbzcsCPC8" src="https://github.com/user-attachments/assets/0f50ebc5-b3a5-44c8-9993-653f8cbf13a1" />
+
+ 
+ # THRuploader
 
 Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInstaller) backendom.
 
