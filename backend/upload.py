@@ -1474,11 +1474,10 @@ async def do_the_thing(base_dir: str) -> None:
         is_valid, config_errors, config_warnings = validate_config(config, active_trackers, active_imghost)
 
         if not is_valid:
-            console.print("[bold red]Configuration validation failed:[/bold red]")
+            print("Configuration validation failed:")
             for error in config_errors:
-                console.print(f"[red]  ✗ {error}[/red]")
-            console.print("[red]\nPlease fix the above errors in your config.py[/red]")
-            console.print("[yellow]Reference: https://github.com/Audionut/Upload-Assistant/blob/master/data/example-config.py[/yellow]")
+                print(f"  - {error}")
+            print("\nPlease fix the above errors in your config.py")
             raise SystemExit(1)
 
         if config_warnings:
