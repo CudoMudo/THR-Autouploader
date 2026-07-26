@@ -539,9 +539,14 @@ function App() {
         </div>
       </div>
 
-      <button className="btn-upload" onClick={handleUpload} disabled={!selectedFolder}>
-        Započni Upload na THR
-      </button>
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        <button className="btn-upload" style={{ backgroundColor: '#2563eb' }} onClick={() => handleDryRun(selectedFolder!)} disabled={!selectedFolder}>
+          Simuliraj Upload (Dry-Run)
+        </button>
+        <button className="btn-upload" onClick={handleUpload} disabled={!selectedFolder}>
+          Započni Upload na THR
+        </button>
+      </div>
 
       <div className="terminal-log">
         {logs.map((log, index) => (
