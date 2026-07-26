@@ -107,6 +107,7 @@ pub struct UploadPayload {
     skip_dupe_check: bool,
     keep_folder: bool,
     manual_name: String,
+    is_dry_run: bool,
 }
 
 #[tauri::command]
@@ -166,6 +167,10 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
     if !payload.manual_name.is_empty() {
         args.push("-name".to_string());
         args.push(payload.manual_name.clone());
+    }
+
+    if payload.is_dry_run {
+        args.push("--dry-run".to_string());
     }
     
     if payload.client_type == "none" {
@@ -322,7 +327,7 @@ async fn dry_run_upload(
 ) -> Result<String, String> {
     let mut args = vec![
         folder_path.clone(),
-        "--dry-run".to_string(),
+        "--meta-only".to_string(),
     ];
 
     let backend_dir = get_backend_dir();

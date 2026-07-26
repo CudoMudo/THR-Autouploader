@@ -161,6 +161,7 @@ class Args:
         parser.add_argument('-knfo', '--keep-nfo', action='store_true', required=False, help="For specific trackers only, allows to keep nfo files. With single files, must be used in conjuction with --keep-folder to find the nfo in the same folder as the file.", dest="keep_nfo")
         parser.add_argument('-reg', '--region', nargs=1, required=False, help="Region for discs")
         parser.add_argument('-a', '--anon', action='store_true', required=False, help="Upload anonymously")
+        parser.add_argument('--meta-only', action='store_true', help='Perform a metadata-only run and output JSON (for GUI auto-detect).')
         parser.add_argument('-st', '--stream', action='store_true', required=False, help="Stream Optimized Upload")
         parser.add_argument('-webdv', '--webdv', action='store_true', required=False, help="Contains a Dolby Vision layer converted using dovi_tool (HYBRID)")
         parser.add_argument('-hc', '--hardcoded-subs', action='store_true', required=False, help="Contains hardcoded subs", dest="hardcoded_subs")

@@ -214,7 +214,7 @@ function App() {
     }
   };
 
-  const handleUpload = async () => {
+  const handleUpload = async (isDryRun: boolean = false) => {
     if (!selectedFolder) return;
 
     if (!thrApiKey || thrApiKey.trim() === "" || !slikeApiKey || slikeApiKey.trim() === "") {
@@ -229,7 +229,7 @@ function App() {
     }
 
     setShowValidation(false);
-    setLogs((prev) => [...prev, `[SISTEM] Pokrećem konačni upload za: ${selectedFolder}`]);
+    setLogs((prev) => [...prev, `[SISTEM] Pokrećem ${isDryRun ? 'simulaciju (Dry-Run)' : 'konačni upload'} za: ${selectedFolder}`]);
     
     try {
       await invoke("start_upload", {
@@ -257,7 +257,8 @@ function App() {
           is_anon: isAnon,
           skip_dupe_check: skipDupeCheck,
           keep_folder: keepFolder,
-          manual_name: manualName
+          manual_name: manualName,
+          is_dry_run: isDryRun
         }
       });
     } catch (error) {
@@ -552,10 +553,10 @@ function App() {
       </div>
 
       <div style={{ display: 'flex', gap: '1rem' }}>
-        <button className="btn-upload" style={{ backgroundColor: '#2563eb' }} onClick={() => handleDryRun(selectedFolder!)} disabled={!selectedFolder}>
+        <button className="btn-upload" style={{ backgroundColor: '#2563eb' }} onClick={() => handleUpload(true)} disabled={!selectedFolder}>
           Simuliraj Upload (Dry-Run)
         </button>
-        <button className="btn-upload" onClick={handleUpload} disabled={!selectedFolder}>
+        <button className="btn-upload" onClick={() => handleUpload(false)} disabled={!selectedFolder}>
           Započni Upload na THR
         </button>
       </div>

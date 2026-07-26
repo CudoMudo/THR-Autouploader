@@ -466,7 +466,7 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
             console.print(traceback.format_exc())
         return
 
-    if meta.get('dry_run', False):
+    if meta.get('meta_only', False):
         safe_meta = {}
         for k, v in meta.items():
             if isinstance(v, (str, int, float, bool, type(None))):
