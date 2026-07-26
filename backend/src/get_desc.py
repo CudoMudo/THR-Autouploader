@@ -627,7 +627,7 @@ class DescriptionBuilder:
 
         # UA Signature
         if not signature:
-            signature = "[center][size=1]Kreirano THR Autouploaderom v1.0[/size][/center]"
+            signature = "[center][size=1]Kreirano THR Autouploaderom[/size][/center]"
             if self.tracker == "HUNO":
                 signature = signature.replace("[size=4]", "[size=8]")
         desc_parts.append(signature)

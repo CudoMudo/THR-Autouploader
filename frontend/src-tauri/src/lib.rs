@@ -68,6 +68,72 @@ fn save_settings(settings: GuiSettings) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn load_existing_config() -> Result<GuiSettings, String> {
+    let backend_dir = get_backend_dir();
+    let config_path = backend_dir.join("data").join("config.py");
+    
+    let mut settings = GuiSettings::default();
+    
+    if config_path.exists() {
+        if let Ok(content) = std::fs::read_to_string(&config_path) {
+            
+            let re_tmdb = regex::Regex::new(r#"(?m)^\s*config\['DEFAULT'\]\['tmdb_api'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_tmdb.captures(&content) { settings.tmdb_api_key = caps[1].to_string(); }
+
+            let re_thr = regex::Regex::new(r#"(?m)^\s*config\['TRACKERS'\]\['THR'\]\['api_key'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_thr.captures(&content) { settings.thr_api_key = caps[1].to_string(); }
+
+            let re_slike = regex::Regex::new(r#"(?m)^\s*config\['DEFAULT'\]\['slikethr_api_key'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_slike.captures(&content) { settings.slike_api_key = caps[1].to_string(); }
+
+            let re_client = regex::Regex::new(r#"(?m)^\s*config\['DEFAULT'\]\['default_torrent_client'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_client.captures(&content) {
+                let client = caps[1].to_string();
+                settings.client_type = if client.to_lowercase() == "none" { "none".to_string() } else { client };
+            }
+
+            let re_qbit_url = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_url'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_qbit_url.captures(&content) { settings.qbit_url = caps[1].to_string(); }
+            
+            let re_qbit_port = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_port'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_qbit_port.captures(&content) {
+                let port = caps[1].to_string();
+                if !port.is_empty() { settings.qbit_url = format!("{}:{}", settings.qbit_url, port); }
+            }
+
+            let re_qbit_user = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_user'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_qbit_user.captures(&content) { settings.qbit_user = caps[1].to_string(); }
+
+            let re_qbit_pass = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_pass'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_qbit_pass.captures(&content) { settings.qbit_pass = caps[1].to_string(); }
+
+            let re_qbit_local = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['local_path'\]\s*=\s*\[?['"]([^'"]+)['"]\]?"#).unwrap();
+            if let Some(caps) = re_qbit_local.captures(&content) { settings.qbit_local_path = caps[1].to_string().replace("\\\\", "\\"); }
+
+            let re_qbit_remote = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['remote_path'\]\s*=\s*\[?['"]([^'"]+)['"]\]?"#).unwrap();
+            if let Some(caps) = re_qbit_remote.captures(&content) { settings.qbit_remote_path = caps[1].to_string().replace("\\\\", "\\"); }
+
+            let re_rtorrent_url = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_url'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_rtorrent_url.captures(&content) { settings.rtorrent_url = caps[1].to_string(); }
+
+            let re_rtorrent_user = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_user'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_rtorrent_user.captures(&content) { settings.rtorrent_user = caps[1].to_string(); }
+
+            let re_rtorrent_pass = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_pass'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            if let Some(caps) = re_rtorrent_pass.captures(&content) { settings.rtorrent_pass = caps[1].to_string(); }
+
+            let re_rtorrent_local = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['local_path'\]\s*=\s*\[?['"]([^'"]+)['"]\]?"#).unwrap();
+            if let Some(caps) = re_rtorrent_local.captures(&content) { settings.rtorrent_local_path = caps[1].to_string().replace("\\\\", "\\"); }
+
+            let re_rtorrent_remote = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['remote_path'\]\s*=\s*\[?['"]([^'"]+)['"]\]?"#).unwrap();
+            if let Some(caps) = re_rtorrent_remote.captures(&content) { settings.rtorrent_remote_path = caps[1].to_string().replace("\\\\", "\\"); }
+        }
+    }
+    
+    Ok(settings)
+}
+
+#[tauri::command]
 fn load_settings() -> Result<GuiSettings, String> {
     let backend_dir = get_backend_dir();
     let settings_path = backend_dir.join("data").join("gui_settings.json");
@@ -77,7 +143,7 @@ fn load_settings() -> Result<GuiSettings, String> {
         let settings: GuiSettings = serde_json::from_str(&content).unwrap_or_default();
         Ok(settings)
     } else {
-        Ok(GuiSettings::default())
+        load_existing_config()
     }
 }
 
@@ -402,7 +468,8 @@ pub fn run() {
             start_upload, 
             dry_run_upload,
             save_settings,
-            load_settings
+            load_settings,
+            load_existing_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
