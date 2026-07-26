@@ -51,6 +51,25 @@ bun run tauri build
 ```
 Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouploader.exe`.
 
+## Povijest Verzija (Changelog)
+
+### v1.3.2 (Trenutna Verzija)
+- **UTF-8 Podrška (Fix):** Potpuno riješeno nestajanje hrvatskih znakova (č, ć, š, ž) na Windows konzoli.
+- **TMDB Validacija:** Aplikacija sada uredno upozorava ako TMDB API ključ nedostaje umjesto tihog pucanja.
+- **Tauri GUI:** Poboljšano parsiranje (regex) upozorenja i pogrešaka za jasniji prikaz u sučelju.
+- **Optimizacija Pakiranja:** Značajno ubrzan proces generiranja *Portable* izdanja korištenjem nativne `tar` skripte (nekoliko sekundi umjesto minute).
+
+### v1.2.0
+- **Potpuna Prijenosnost (Portable):** Uklonjene sve apsolutne putanje iz koda; aplikacija radi iz bilo kojeg foldera/diska bez instalacije.
+- **Čisto Izdanje:** Optimiziran distribucijski ZIP smanjen s ~134MB na ~12MB (uklonjeni development i cache fajlovi).
+- **Sigurno Raspakiravanje:** ZIP sada sadrži root mapu kako bi se izbjeglo razbacivanje datoteka prilikom ekstrakcije.
+
+### v1.1 (Hotfix)
+- **Simuliraj Upload (Dry-Run):** Vraćena puna podrška za simulaciju procesa, omogućujući testiranje uploada bez slanja na tracker.
+
+### v1.0
+- **Inicijalno Izdanje:** Prva nativna Windows (`.exe`) verzija THRuploader-a s modernim grafičkim sučeljem i odvojenim klijent profilima (Split Personality).
+
 ## Sigurnost
 
 Vaši podaci (API ključevi, lozinke) pohranjuju se lokalno u `backend/data` mapi koja je striktno zaštićena `.gitignore` datotekom i **nikada** neće biti poslana na GitHub. Pazite da tu mapu ne dijelite s drugima!
