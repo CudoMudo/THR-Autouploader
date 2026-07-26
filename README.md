@@ -1,8 +1,6 @@
 <img width="1198" height="998" alt="thr_autouploader_EYbzcsCPC8" src="https://github.com/user-attachments/assets/0f50ebc5-b3a5-44c8-9993-653f8cbf13a1" />
 
- 
- # THRuploader
-
+# THRuploader
 Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInstaller) backendom.
 
 ## Značajke
@@ -56,3 +54,11 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 ## Sigurnost
 
 Vaši podaci (API ključevi, lozinke) pohranjuju se lokalno u `backend/data` mapi koja je striktno zaštićena `.gitignore` datotekom i **nikada** neće biti poslana na GitHub. Pazite da tu mapu ne dijelite s drugima!
+
+## Zahvale (Credits)
+
+Ovaj projekt ne bi bio moguć bez fantastičnog open-source rada na pozadinskoj logici alata. Veliko hvala sljedećim autorima:
+- [L4GSP1KE](https://github.com/L4GSP1KE/Upload-Assistant) - Originalni autor i kreator glavne arhitekture Upload-Assistant projekta.
+- [Audionut](https://github.com/Audionut/Upload-Assistant) - Aktivni održavatelj koda i autor forkane verzije koja pogoni ovaj backend. 
+
+Zahvaljujući njihovom temelju, mogli smo izgraditi ovo nativno Windows iskustvo prilagođeno za THR!
