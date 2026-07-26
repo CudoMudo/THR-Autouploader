@@ -41,7 +41,6 @@ $ItemsToRemove = @(
     "$TempReleaseFolder\backend\src\__pycache__",
     "$TempReleaseFolder\backend\data\__pycache__",
     "$TempReleaseFolder\backend\cogs\__pycache__",
-    "$TempReleaseFolder\backend\dist",
     "$TempReleaseFolder\backend\build",
     "$TempReleaseFolder\backend\tmp\*",
     "$TempReleaseFolder\backend\Torrents\*"
