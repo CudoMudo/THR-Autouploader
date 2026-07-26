@@ -1,0 +1,37 @@
+﻿# Rust / Tauri build artifacts
+frontend/src-tauri/target/
+frontend/src-tauri/Cargo.lock
+
+# Node / JS dependencies
+frontend/node_modules/
+frontend/dist/
+frontend/package-lock.json
+frontend/bun.lockb
+
+# Python build artifacts
+backend/__pycache__/
+backend/build/
+backend/dist/
+backend/*.spec
+
+# User Data (CRITICAL - NO API KEYS ON GIT)
+backend/data/config.py
+backend/data/gui_settings.json
+backend/data/*.db
+backend/data/*.json
+backend/data/*.log
+
+# Temp folders
+backend/tmp/
+backend/Torrents/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Other
+test_spawn.exe
+test_spawn.pdb
+test_spawn.rs
+test_output.txt
+test_output_utf8.txt
