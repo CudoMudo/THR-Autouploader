@@ -170,7 +170,7 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
     }
 
     if payload.is_dry_run {
-        args.push("--dry-run".to_string());
+        args.push("--debug".to_string());
     }
     
     if payload.client_type == "none" {
@@ -268,6 +268,7 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
     cmd.current_dir(backend_dir)
         .args(&args)
         .env("PYTHONIOENCODING", "utf8")
+        .env("PYTHONUTF8", "1")
         .env("SLIKETHR_API_KEY", &payload.slike_api_key)
         .env("THR_API_KEY", &payload.thr_api_key)
         .env("TMDB_API_KEY", &payload.tmdb_api_key)
@@ -363,6 +364,7 @@ async fn dry_run_upload(
     cmd.current_dir(backend_dir)
         .args(&args)
         .env("PYTHONIOENCODING", "utf8")
+        .env("PYTHONUTF8", "1")
         .env("SLIKETHR_API_KEY", &slike_api_key)
         .env("THR_API_KEY", &thr_api_key)
         .env("TMDB_API_KEY", &tmdb_api_key)

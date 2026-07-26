@@ -14,7 +14,7 @@ config = {
 
         # tmdb api key **REQUIRED**
         # visit "https://www.themoviedb.org/settings/api" copy api key and insert below
-        "tmdb_api": "${API_KEY}",
+        "tmdb_api": "",
 
         # tvdb api key
         # visit "https://www.thetvdb.com/dashboard/account/apikey" copy api key and insert below

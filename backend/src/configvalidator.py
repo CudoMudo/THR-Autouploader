@@ -381,7 +381,7 @@ def _validate_default_section(default: dict[str, Any]) -> tuple[list[str], list[
     # Check tmdb_api is not empty (critical)
     tmdb_api = default.get("tmdb_api", "")
     if isinstance(tmdb_api, str) and not tmdb_api.strip():
-        errors.append("DEFAULT['tmdb_api'] is empty - TMDB API key is required for operation")
+        errors.append("DEFAULT['tmdb_api'] je prazan - TMDB API klju\u010d je obavezan za rad")
 
     # Validate types for known keys (warnings only for type mismatches)
     for key, expected_types in DEFAULT_KEY_TYPES.items():

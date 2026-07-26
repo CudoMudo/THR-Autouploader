@@ -201,8 +201,9 @@ function App() {
         cleanError = "Ova datoteka nema audio traku (nepodržan format).";
       } else {
         // Fallback: očisti dugačke logove i prikaži samo bitno
-        if (rawError.includes("Configuration validation failed")) {
-           cleanError = "Greška u config.py postavkama: " + rawError.split("Configuration validation failed:")[1].substring(0, 150) + "...";
+        if (rawError.includes("Configuration validation failed") || rawError.includes("Validacija konfiguracije nije uspjela")) {
+           const splitKey = rawError.includes("Configuration validation failed") ? "Configuration validation failed:" : "Validacija konfiguracije nije uspjela:";
+           cleanError = "Greška u config.py postavkama: " + rawError.split(splitKey)[1].substring(0, 150) + "...";
         } else {
            cleanError = "Nisam pronašao metapodatke. Detalji: " + rawError.substring(0, 100);
         }
@@ -496,8 +497,16 @@ function App() {
       </div>
 
       {showValidation && (
-        <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#1a1a24', border: '1px solid #4ade80', borderRadius: '8px' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#4ade80' }}>✓ Prepoznato: {validationData?.title || 'Nepoznato'}</h3>
+        <div style={{ 
+          marginTop: '1rem', 
+          padding: '1rem', 
+          backgroundColor: '#1a1a24', 
+          border: `1px solid ${validationData?.title ? '#4ade80' : '#f59e0b'}`, 
+          borderRadius: '8px' 
+        }}>
+          <h3 style={{ margin: '0 0 10px 0', color: validationData?.title ? '#4ade80' : '#f59e0b' }}>
+            {validationData?.title ? `✓ Prepoznato: ${validationData.title}` : '⚠️ Nije prepoznato automatski'}
+          </h3>
           <p style={{ margin: '0 0 15px 0', fontSize: '0.9rem' }}>
             Kategorija: {validationData?.category || category} | 
             Rezolucija: {validationData?.resolution || resolution}

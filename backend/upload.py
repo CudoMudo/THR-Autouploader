@@ -11,6 +11,10 @@ import re
 import shutil
 import signal
 import sys
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding='utf-8')
 import threading
 import time
 import traceback
@@ -230,7 +234,16 @@ config: dict[str, Any]
 
 if os.path.exists(_config_path):
     try:
-        from data.config import config as _imported_config  # pyright: ignore[reportMissingImports,reportUnknownVariableType]
+        import importlib.util
+        import sys
+        _spec = importlib.util.spec_from_file_location("data_config_live", _config_path)
+        if _spec and _spec.loader:
+            _cfg_mod = importlib.util.module_from_spec(_spec)
+            sys.modules["data_config_live"] = _cfg_mod
+            _spec.loader.exec_module(_cfg_mod)
+            _imported_config = getattr(_cfg_mod, "config", {})
+        else:
+            raise ImportError(f"Could not load spec for {_config_path}")
         config = cast(dict[str, Any], _imported_config)
         parser = Args(config)
         client = Clients(config)
@@ -1313,12 +1326,18 @@ async def do_the_thing(base_dir: str) -> None:
     # in-place (clear + update) keeps all existing references (Args,
     # Clients, managers, etc.) pointing at the same dict object.
     try:
-        import importlib
+        import importlib.util
+        import sys
 
-        import data.config as _cfg_mod  # may already be cached
+        _spec = importlib.util.spec_from_file_location("data_config_live", _config_path)
+        if _spec and _spec.loader:
+            _cfg_mod = importlib.util.module_from_spec(_spec)
+            sys.modules["data_config_live"] = _cfg_mod
+            _spec.loader.exec_module(_cfg_mod)
+            _reloaded = getattr(_cfg_mod, "config", {})
+        else:
+            raise ImportError(f"Could not load spec for {_config_path}")
 
-        importlib.reload(_cfg_mod)
-        _reloaded = _cfg_mod.config  # may raise AttributeError
         if not isinstance(_reloaded, dict):
             raise TypeError(f"Expected dict, got {type(_reloaded).__name__}")
         config.clear()
@@ -1474,10 +1493,10 @@ async def do_the_thing(base_dir: str) -> None:
         is_valid, config_errors, config_warnings = validate_config(config, active_trackers, active_imghost)
 
         if not is_valid:
-            print("Configuration validation failed:")
+            print("Validacija konfiguracije nije uspjela:")
             for error in config_errors:
                 print(f"  - {error}")
-            print("\nPlease fix the above errors in your config.py")
+            print("\nMolimo ispravite gornje gre\u0161ke u va\u0161oj config.py datoteci")
             raise SystemExit(1)
 
         if config_warnings:

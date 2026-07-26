@@ -6,7 +6,7 @@ $ExeSource = Join-Path $ProjectRoot "frontend\src-tauri\target\release\thr_autou
 $BackendSource = Join-Path $ProjectRoot "backend"
 
 # Konfiguracija
-$ReleaseVersion = "1.3"
+$ReleaseVersion = "1.3.2"
 $SourceDir = "C:\Users\STRiT\Desktop\THRuploader"
 $DesktopPath = [Environment]::GetFolderPath("Desktop")
 $TempReleaseFolder = "$DesktopPath\THRuploader_$ReleaseVersion"
@@ -55,8 +55,9 @@ foreach ($item in $ItemsToRemove) {
 
 # 6. Zippanje u čisti public ZIP
 Write-Host "Zippam portable aplikaciju u $OutZip..." -ForegroundColor Cyan
-# Koristimo Compress-Archive. Pakiramo cijeli folder (bez \*) kako bi unutar ZIP-a postojao glavni krovni direktorij
-Compress-Archive -Path $TempReleaseFolder -DestinationPath $OutZip -Force
+# Koristimo brzi sistemski tar umjesto sporog Compress-Archive (koji zamrzava Windowse)
+Set-Location $DesktopPath
+tar.exe -a -c -f $OutZip "THRuploader_$ReleaseVersion"
 
 # 7. Brisanje temp foldera
 Remove-Item -Path $TempReleaseFolder -Recurse -Force
