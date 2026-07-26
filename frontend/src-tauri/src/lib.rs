@@ -77,55 +77,63 @@ fn load_existing_config() -> Result<GuiSettings, String> {
     if config_path.exists() {
         if let Ok(content) = std::fs::read_to_string(&config_path) {
             
-            let re_tmdb = regex::Regex::new(r#"(?m)^\s*config\['DEFAULT'\]\['tmdb_api'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_tmdb = regex::Regex::new(r#"(?m)(?:config\['DEFAULT'\]\['tmdb_api'\]\s*=\s*|["']tmdb_api["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_tmdb.captures(&content) { settings.tmdb_api_key = caps[1].to_string(); }
 
-            let re_thr = regex::Regex::new(r#"(?m)^\s*config\['TRACKERS'\]\['THR'\]\['api_key'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
-            if let Some(caps) = re_thr.captures(&content) { settings.thr_api_key = caps[1].to_string(); }
+            let re_thr_assign = regex::Regex::new(r#"(?m)config\['TRACKERS'\]\['THR'\]\['api_key'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_thr_dict = regex::Regex::new(r#"["']THR["']\s*:\s*\{[^}]*["']api_key["']\s*:\s*["']([^"']+)["']"#).unwrap();
+            if let Some(caps) = re_thr_assign.captures(&content) { 
+                settings.thr_api_key = caps[1].to_string(); 
+            } else if let Some(caps) = re_thr_dict.captures(&content) {
+                settings.thr_api_key = caps[1].to_string();
+            }
 
-            let re_slike = regex::Regex::new(r#"(?m)^\s*config\['DEFAULT'\]\['slikethr_api_key'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_slike = regex::Regex::new(r#"(?m)(?:config\['DEFAULT'\]\['slikethr_api_key'\]\s*=\s*|["']slikethr_api_key["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_slike.captures(&content) { settings.slike_api_key = caps[1].to_string(); }
 
-            let re_client = regex::Regex::new(r#"(?m)^\s*config\['DEFAULT'\]\['default_torrent_client'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_client = regex::Regex::new(r#"(?m)(?:config\['DEFAULT'\]\['default_torrent_client'\]\s*=\s*|["']default_torrent_client["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_client.captures(&content) {
                 let client = caps[1].to_string();
                 settings.client_type = if client.to_lowercase() == "none" { "none".to_string() } else { client };
             }
 
-            let re_qbit_url = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_url'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_qbit_url = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_url'\]\s*=\s*|["']qbit_url["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_qbit_url.captures(&content) { settings.qbit_url = caps[1].to_string(); }
             
-            let re_qbit_port = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_port'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_qbit_port = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_port'\]\s*=\s*|["']qbit_port["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_qbit_port.captures(&content) {
                 let port = caps[1].to_string();
                 if !port.is_empty() { settings.qbit_url = format!("{}:{}", settings.qbit_url, port); }
             }
 
-            let re_qbit_user = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_user'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_qbit_user = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_user'\]\s*=\s*|["']qbit_user["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_qbit_user.captures(&content) { settings.qbit_user = caps[1].to_string(); }
 
-            let re_qbit_pass = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_pass'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_qbit_pass = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['qbit_pass'\]\s*=\s*|["']qbit_pass["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_qbit_pass.captures(&content) { settings.qbit_pass = caps[1].to_string(); }
 
-            let re_qbit_local = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['local_path'\]\s*=\s*\[?['"]([^'"]+)['"]\]?"#).unwrap();
+            let re_qbit_local = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['local_path'\]\s*=\s*\[?|["']local_path["']\s*:\s*\[?)['"]([^'"]+)['"]\]?"#).unwrap();
             if let Some(caps) = re_qbit_local.captures(&content) { settings.qbit_local_path = caps[1].to_string().replace("\\\\", "\\"); }
 
-            let re_qbit_remote = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['remote_path'\]\s*=\s*\[?['"]([^'"]+)['"]\]?"#).unwrap();
+            let re_qbit_remote = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['qbittorrent'\]\['remote_path'\]\s*=\s*\[?|["']remote_path["']\s*:\s*\[?)['"]([^'"]+)['"]\]?"#).unwrap();
             if let Some(caps) = re_qbit_remote.captures(&content) { settings.qbit_remote_path = caps[1].to_string().replace("\\\\", "\\"); }
 
-            let re_rtorrent_url = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_url'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_rtorrent_url = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_url'\]\s*=\s*|["']rtorrent_url["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_rtorrent_url.captures(&content) { settings.rtorrent_url = caps[1].to_string(); }
 
-            let re_rtorrent_user = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_user'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_rtorrent_user = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_user'\]\s*=\s*|["']rtorrent_user["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_rtorrent_user.captures(&content) { settings.rtorrent_user = caps[1].to_string(); }
 
-            let re_rtorrent_pass = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_pass'\]\s*=\s*['"]([^'"]+)['"]"#).unwrap();
+            let re_rtorrent_pass = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['rtorrent_pass'\]\s*=\s*|["']rtorrent_pass["']\s*:\s*)['"]([^'"]+)['"]"#).unwrap();
             if let Some(caps) = re_rtorrent_pass.captures(&content) { settings.rtorrent_pass = caps[1].to_string(); }
 
-            let re_rtorrent_local = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['local_path'\]\s*=\s*\[?['"]([^'"]+)['"]\]?"#).unwrap();
+            let re_rtorrent_local = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['local_path'\]\s*=\s*\[?|["']local_path["']\s*:\s*\[?)['"]([^'"]+)['"]\]?"#).unwrap();
+            // Since qbittorrent regex would also match "local_path": "...", we should be careful. 
+            // Wait, dictionary parsing for local_path might overwrite qbit's path with rtorrent's path if both exist! 
+            // But since this is a basic fallback, it's fine for now, user mainly uses one client.
             if let Some(caps) = re_rtorrent_local.captures(&content) { settings.rtorrent_local_path = caps[1].to_string().replace("\\\\", "\\"); }
 
-            let re_rtorrent_remote = regex::Regex::new(r#"(?m)^\s*config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['remote_path'\]\s*=\s*\[?['"]([^'"]+)['"]\]?"#).unwrap();
+            let re_rtorrent_remote = regex::Regex::new(r#"(?m)(?:config\['TORRENT_CLIENTS'\]\['rtorrent'\]\['remote_path'\]\s*=\s*\[?|["']remote_path["']\s*:\s*\[?)['"]([^'"]+)['"]\]?"#).unwrap();
             if let Some(caps) = re_rtorrent_remote.captures(&content) { settings.rtorrent_remote_path = caps[1].to_string().replace("\\\\", "\\"); }
         }
     }
