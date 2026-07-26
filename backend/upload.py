@@ -53,9 +53,13 @@ from src.uphelper import UploadHelper
 from src.uploadscreens import UploadScreensManager
 
 cli_ui.setup(color='always', title="Upload Assistant")
-base_dir = os.path.abspath(os.path.dirname(__file__))
+import sys
+if getattr(sys, 'frozen', False):
+    # PyInstaller: executable is at backend/dist/upload/upload.exe
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", ".."))
+else:
+    base_dir = os.path.abspath(os.path.dirname(__file__))
 
-# Global state for shutdown handling (reset via _reset_shutdown_state() for in-process runs)
 _shutdown_requested = False
 _is_webui_mode = False
 _webui_server = None  # Reference to waitress server for graceful shutdown
