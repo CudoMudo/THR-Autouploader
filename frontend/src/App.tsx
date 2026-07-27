@@ -418,9 +418,9 @@ function App() {
 
       <div className={`drop-zone ${isDragging ? "dragging" : ""}`}>
         {selectedFolder ? (
-          <div className="folder-selected">
+          <div className="folder-selected" style={{ width: '100%', textAlign: 'center', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>
             <h3>📁 Odabrano:</h3>
-            <p>{selectedFolder}</p>
+            <p style={{ wordBreak: 'break-all', overflowWrap: 'anywhere', margin: '0.5rem 0 1rem 0', fontSize: '0.9rem', color: '#e0e0e0', lineHeight: '1.4' }}>{selectedFolder}</p>
             <button className="btn-clear" onClick={() => setSelectedFolder(null)}>Očisti</button>
           </div>
         ) : (

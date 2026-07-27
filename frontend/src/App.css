@@ -102,6 +102,24 @@ body {
   margin-bottom: 1rem;
 }
 
+.folder-selected {
+  text-align: center;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.folder-selected p {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
 .file-ready {
   text-align: center;
   width: 100%;
