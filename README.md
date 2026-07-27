@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.3.4_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.3.5_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,10 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.3.4 (Trenutna Verzija)
+### v1.3.5 (Trenutna Verzija)
+- **Fix MediaInfo PTPImg zastavica:** Uklonjeni slomljeni `[img]` linkovi PTPImg zastavica iz MediaInfo parsera za titlove i zvuk; titlovi i jezici se sada u opisu prikazuju kao čisti, uredni i čitljivi tekst (npr. `German (DE), English (US), Spanish (ES)...`).
+
+### v1.3.4
 - **Pametno čitanje postavki:** Tauri backend (Rust) sada koristi napredniji Regex za potpuno i točno prepoznavanje API ključeva direktno iz `config.py` datoteke, bez obzira jesu li definirani unutar dictionaryja ili kao override na dnu datoteke.
 - **Sinergija konfiguracija:** GUI uredno pada nazad na čitanje `config.py` datoteke ukoliko nedostaje `gui_settings.json`, čineći prenosivost vaših starih postavki bezbolnom.
 
