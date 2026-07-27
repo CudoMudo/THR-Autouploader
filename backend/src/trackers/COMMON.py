@@ -976,34 +976,10 @@ class COMMON:
                         current_track[property_name] = property_value
                     elif current_section == "text":
                         # Processing specific properties for text
-                        # Process title field
                         if property_name == "title" and "title" not in current_track:
-                            title_lower = property_value.lower()
-                            # print(f"\nProcessing Title: '{property_value}'")  # Debugging output
-
-                            # Store the title as-is since it should remain descriptive
                             current_track["title"] = property_value
-                            # print(f"Stored title: '{property_value}'")
-
-                            # If there's an exact match in LANGUAGE_CODE_MAP, add country code to language field
-                            if title_lower in self.LANGUAGE_CODE_MAP:
-                                country_code, size = self.LANGUAGE_CODE_MAP[title_lower]
-                                current_track["language"] = f"[img={size}]{country_code}[/img]"
-                                # print(f"Exact match found for title '{title_lower}' with country code: {country_code}")
-
-                        # Process language field only if it hasn't already been set
                         elif property_name == "language" and "language" not in current_track:
-                            language_lower = property_value.lower()
-                            # print(f"\nProcessing Language: '{property_value}'")  # Debugging output
-
-                            if language_lower in self.LANGUAGE_CODE_MAP:
-                                country_code, size = self.LANGUAGE_CODE_MAP[language_lower]
-                                current_track["language"] = f"[img={size}]{country_code}[/img]"
-                                # print(f"Matched language '{language_lower}' to country code: {country_code}")
-                            else:
-                                # If no match in LANGUAGE_CODE_MAP, store language as-is
-                                current_track["language"] = property_value
-                                # print(f"No match found for language '{property_value}', stored as-is.")
+                            current_track["language"] = property_value
 
             # Append the last track to the parsed data if it exists
             if current_section and current_track:
@@ -1011,13 +987,6 @@ class COMMON:
                     parsed_data[current_section].append(current_track)
                 else:
                     parsed_data[current_section] = current_track
-                # Final debug output for the last track data
-                # print(f"Final processed track data for last section '{current_section}': {current_track}")
-
-            # Debug output for the complete parsed_data
-            # print("\nComplete Parsed Data:")
-            # for section, data in parsed_data.items():
-            #    print(f"{section}: {data}")
 
             return parsed_data
 
@@ -1043,17 +1012,10 @@ class COMMON:
                 for index, track in enumerate(parsed_mediainfo["audio"], start=1):  # Start enumeration at 1
                     parts = [f"{index}."]  # Start with track number without a trailing slash
 
-                    # Language flag image
-                    language = track.get("language", "").lower()
-                    result = self.LANGUAGE_CODE_MAP.get(language)
-
-                    # Check if the language was found in LANGUAGE_CODE_MAP
-                    if result is not None:
-                        country_code, size = result
-                        parts.append(f"[img={size}]{country_code}[/img]")
-                    else:
-                        # If language is not found, use a fallback or display the language as plain text
-                        parts.append(language.capitalize() if language else "")
+                    # Language text name
+                    language = track.get("language", "").capitalize()
+                    if language:
+                        parts.append(language)
 
                     # Other properties to concatenate (language already handled above)
                     properties = ["codec", "format", "channels", "bit_rate", "format_profile", "stream_size"]
@@ -1062,14 +1024,15 @@ class COMMON:
                     # Join parts (starting from index 1, after the track number) with slashes and add to bbcode_output
                     bbcode_output += f"{parts[0]} " + " / ".join(parts[1:]) + "\n"
 
-            # Format Text Section - Centered with flags or text, spaced apart
+            # Format Text Section - Clean subtitle titles / languages separated by commas
             if "text" in parsed_mediainfo:
                 bbcode_output += "\n[b]Subtitles[/b]\n"
                 subtitle_entries: list[str] = []
                 for track in parsed_mediainfo["text"]:
-                    language_display = track.get("language", "")
-                    subtitle_entries.append(language_display)
-                bbcode_output += " ".join(subtitle_entries)
+                    display_name = track.get("title") or track.get("language") or ""
+                    if display_name and display_name not in subtitle_entries:
+                        subtitle_entries.append(display_name)
+                bbcode_output += ", ".join(subtitle_entries) + "\n"
 
             bbcode_output += "\n"
             return bbcode_output
