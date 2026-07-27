@@ -47,7 +47,7 @@ Backend mora biti iskompajliran u neovisni `.exe` pomoću PyInstallera prije neg
 ```bash
 cd backend
 pip install pyinstaller
-pyinstaller --noconfirm --onedir --console upload.py
+pyinstaller --noconfirm --onedir --console --collect-all babelfish --collect-all guessit upload.py
 ```
 
 ### 3. Kompajliranje Tauri Frontenda
