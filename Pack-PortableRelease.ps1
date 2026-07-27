@@ -9,33 +9,32 @@ $BackendSource = Join-Path $ProjectRoot "backend"
 $TauriConfPath = Join-Path $ProjectRoot "frontend\src-tauri\tauri.conf.json"
 $TauriConf = Get-Content -Raw -Path $TauriConfPath | ConvertFrom-Json
 $ReleaseVersion = $TauriConf.version
-$SourceDir = "C:\Users\STRiT\Desktop\THRuploader"
 $DesktopPath = [Environment]::GetFolderPath("Desktop")
-$TempReleaseFolder = "$DesktopPath\THRuploader_$ReleaseVersion"
-$OutZip = "$DesktopPath\THRuploader_v$($ReleaseVersion)_Portable.zip"
+$TempReleaseFolder = Join-Path $DesktopPath "THRuploader_$ReleaseVersion"
+$OutZip = Join-Path $DesktopPath "THRuploader_v$($ReleaseVersion)_Portable.zip"
 
-Write-Host "Pripremam Portable Release..." -ForegroundColor Cyan
+Write-Host "Pripremam Portable Release (v$ReleaseVersion)..." -ForegroundColor Cyan
 
 # 1. Čišćenje starih temp datoteka ako postoje
 if (Test-Path $TempReleaseFolder) { Remove-Item -Path $TempReleaseFolder -Recurse -Force }
 if (Test-Path $OutZip) { Remove-Item -Path $OutZip -Force }
 
-# 2. Kreiranje foldera THRuploader_1.2
+# 2. Kreiranje privremenog foldera za izdanje
 New-Item -ItemType Directory -Path $TempReleaseFolder | Out-Null
 
 # 3. Kopiranje izvršne datoteke (.exe)
 if (Test-Path $ExeSource) {
-    Write-Host "Kopiram thr_autouploader.exe..."
+    Write-Host "Kopiram thr_autouploader.exe..." -ForegroundColor Green
     Copy-Item -Path $ExeSource -Destination $TempReleaseFolder -Force
 } else {
     Write-Error "GRESKA: Ne mogu pronaci $ExeSource! Moras prvo odraditi build u Tauriju."
 }
 
 # 4. Kopiranje backend foldera
-Write-Host "Kopiram backend folder..."
+Write-Host "Kopiram backend folder..." -ForegroundColor Green
 Copy-Item -Path $BackendSource -Destination "$TempReleaseFolder\backend" -Recurse -Force
 
-# 5. Čišćenje backenda u temp folderu od osobnih podataka i bloata
+# 5. Čišćenje backenda u temp folderu od osobnih podataka, cachea i tajni
 $ItemsToRemove = @(
     "$TempReleaseFolder\backend\data\config.py",
     "$TempReleaseFolder\backend\data\gui_settings.json",
@@ -45,7 +44,11 @@ $ItemsToRemove = @(
     "$TempReleaseFolder\backend\cogs\__pycache__",
     "$TempReleaseFolder\backend\build",
     "$TempReleaseFolder\backend\tmp\*",
-    "$TempReleaseFolder\backend\Torrents\*"
+    "$TempReleaseFolder\backend\Torrents\*",
+    "$TempReleaseFolder\backend\.env",
+    "$TempReleaseFolder\backend\*.log",
+    "$TempReleaseFolder\backend\data\*.db",
+    "$TempReleaseFolder\backend\data\*.sqlite"
 )
 
 foreach ($item in $ItemsToRemove) {
@@ -57,7 +60,6 @@ foreach ($item in $ItemsToRemove) {
 
 # 6. Zippanje u čisti public ZIP
 Write-Host "Zippam portable aplikaciju u $OutZip..." -ForegroundColor Cyan
-# Koristimo brzi sistemski tar umjesto sporog Compress-Archive (koji zamrzava Windowse)
 Set-Location $DesktopPath
 tar.exe -a -c -f $OutZip "THRuploader_$ReleaseVersion"
 
