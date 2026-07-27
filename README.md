@@ -16,11 +16,16 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.3.2_Release.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.3.4_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
-**Napomena:** Aplikacija dolazi bez pred-kreiranih konfiguracijskih datoteka. Kad prvi put unesete API ključeve i kliknete "Spremi", aplikacija će automatski generirati vaš `config.py` unutar `backend/data` mape.
+**Napomena oko postavki (gui_settings.json vs config.py):**
+Kada prvi put unesete API ključeve i kliknete "Spremi", aplikacija će kreirati dvije datoteke u `backend/data` mapi:
+1. `gui_settings.json` - Ovu datoteku GUI koristi kao "predmemoriju" za brzo i pouzdano učitavanje vaših postavki pri svakom paljenju.
+2. `config.py` - Ovu datoteku koristi pozadinska (Python) skripta za rad.
+
+Ako želite, uvijek možete ubaciti svoj stari, već podešeni `config.py` u mapu. Ako izbrišete `gui_settings.json`, aplikacija će inteligentno pročitati vaš `config.py` i automatski rekonstruirati sučelje!
 
 ## Za Developere (Kompajliranje iz izvornog koda)
 
@@ -53,7 +58,14 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.3.2 (Trenutna Verzija)
+### v1.3.4 (Trenutna Verzija)
+- **Pametno čitanje postavki:** Tauri backend (Rust) sada koristi napredniji Regex za potpuno i točno prepoznavanje API ključeva direktno iz `config.py` datoteke, bez obzira jesu li definirani unutar dictionaryja ili kao override na dnu datoteke.
+- **Sinergija konfiguracija:** GUI uredno pada nazad na čitanje `config.py` datoteke ukoliko nedostaje `gui_settings.json`, čineći prenosivost vaših starih postavki bezbolnom.
+
+### v1.3.3
+- **GUI Poliranja:** Riješeni problemi s `localhost` portovima za qBittorrent, ispravljeno skrivanje lozinki i osigurano pravilno prosljeđivanje argumenata za TMDB/THR ključeve iz GUI-ja u pozadinsku skriptu.
+
+### v1.3.2
 - **UTF-8 Podrška (Fix):** Potpuno riješeno nestajanje hrvatskih znakova (č, ć, š, ž) na Windows konzoli.
 - **TMDB Validacija:** Aplikacija sada uredno upozorava ako TMDB API ključ nedostaje umjesto tihog pucanja.
 - **Tauri GUI:** Poboljšano parsiranje (regex) upozorenja i pogrešaka za jasniji prikaz u sučelju.
