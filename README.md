@@ -20,6 +20,8 @@ Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
+**Važna napomena za rad aplikacije: Kako bi aplikacija uspješno generirala screenshotove iz videa, potrebno je preuzeti ispravan 64-bitni ffmpeg.exe i ubaciti ga direktno u isti folder gdje se nalazi i aplikacija (root folder).
+
 **Napomena oko postavki (gui_settings.json vs config.py):**
 Kada prvi put unesete API ključeve i kliknete "Spremi", aplikacija će kreirati dvije datoteke u `backend/data` mapi:
 1. `gui_settings.json` - Ovu datoteku GUI koristi kao "predmemoriju" za brzo i pouzdano učitavanje vaših postavki pri svakom paljenju.
