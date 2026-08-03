@@ -652,7 +652,7 @@ function App() {
           <strong>Uspjeh!</strong> {successMessage}
           {uploadedUrl && (
             <div style={{ marginTop: '1rem' }}>
-              <a href={uploadedUrl} onClick={(e) => { e.preventDefault(); openUrl(uploadedUrl); }} style={{ color: '#4ade80', textDecoration: 'underline', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer' }}>
+              <a href={uploadedUrl} onClick={(e) => { e.preventDefault(); openUrl(uploadedUrl).catch(err => setErrorMessage("Ne mogu otvoriti link: " + String(err))); }} style={{ color: '#4ade80', textDecoration: 'underline', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer' }}>
                 Klikni ovdje za pregled torrenta
               </a>
             </div>
