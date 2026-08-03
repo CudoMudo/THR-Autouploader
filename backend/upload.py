@@ -480,6 +480,30 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
         return
 
     if meta.get('meta_only', False):
+        try:
+            if os.environ.get('NO_BBCODE') != '1':
+                from src.get_desc import DescriptionBuilder
+                from src.takescreens import TakeScreensManager
+                from src.exportmi import exportInfo
+
+                if meta.get('filelist'):
+                    file_list = [str(p) for p in meta.get('filelist', []) if str(p)]
+                    videopath = file_list[0] if file_list else ""
+                    if videopath and not meta.get('is_disc'):
+                        # Ensure tmp directory exists
+                        os.makedirs(f"{meta.get('base_dir', '.')}/tmp/{meta.get('uuid', '')}", exist_ok=True)
+                        
+                        # Note: gather_prep already runs exportInfo if meta['edit'] is False, but we can run it here just in case
+                        await exportInfo(videopath, meta.get('isdir', False), meta.get('uuid', ''), meta.get('base_dir', ''), meta.get('is_disc', '') == 'DVD', meta.get('debug', False))
+                        
+                        await takescreens_manager.screenshots(videopath, meta.get('title', ''), meta.get('uuid', ''), meta.get('base_dir', ''), meta)
+                
+                # For dry-run, we will attempt to build the THR description
+                desc = await DescriptionBuilder('THR', config).unit3d_edit_desc(meta)
+                meta['bbcode_description'] = desc
+        except Exception as e:
+            meta['bbcode_description'] = f"Nije moguće izgenerirati opis: {e}"
+            
         safe_meta = {}
         for k, v in meta.items():
             if isinstance(v, (str, int, float, bool, type(None))):
@@ -1802,6 +1826,11 @@ async def do_the_thing(base_dir: str) -> None:
                     return ""
                 except Exception as exc:
                     return f"Error printing {tracker} data: {exc}\n"
+
+            for tracker, status in cast(dict[str, Any], meta.get('tracker_status', {})).items():
+                line = build_tracker_status_line(tracker, status)
+                if line.strip():
+                    console.print(f"[bold green]{line.strip()}[/bold green]")
 
             if use_discord and bot:
                 send_upload_links = bool(discord_config.get('send_upload_links', False)) if discord_config is not None else False

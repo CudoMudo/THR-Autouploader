@@ -253,6 +253,7 @@ class TrackerStatusManager:
                 console.print(f"[red]Skipped due to specific tracker conditions: [bold yellow]{', '.join(skipped_trackers)}[/bold yellow].")
             if dupe_trackers:
                 console.print(f"[red]Found potential dupes on: [bold yellow]{', '.join(dupe_trackers)}[/bold yellow].")
+                console.print(f"[red]Skipping {', '.join(dupe_trackers)} due to dupes[/red]")
             if passed_trackers:
                 console.print(f"[bold green]Trackers passed all checks: [bold yellow]{', '.join(passed_trackers)}")
         else:

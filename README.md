@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.3.5_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.3.6_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,16 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.3.5 (Trenutna Verzija)
+### v1.4.0 (Trenutna Verzija)
+- **Fiksiran ručni naziv:** Backend napokon striktno poštuje naziv upisan u "Ručni naziv torrenta" umjesto da ga ignorira i pokušava automatski pogoditi iz imena datoteke (što bi znalo rezultirati praznim imenom i samim `-PiPi` tagom na trackeru).
+- **Rukovanje duplikatima:** Ispravljena logika u komunikaciji između Pythona i GUI-ja; ako skripta naiđe na duplikat (a nije uključena opcija za forsiranje), uploada se pravilno prekida i ostaje veliki crveni okvir "Prekinuto: Pronađen je duplikat!", umjesto da se lažno zeleni na kraju procesa.
+- **Klikabilni linkovi:** Popravljen URL link koji se izbacivao na zelenom ekranu uspjeha, tako da te sada vodi točno na tvoj novi torrent na THR-u!
+
+### v1.3.6
+- **Dummy Proof Zaštita:** Aplikacija sada eksplicitno blokira pokretanje uploada ako korisnik nije unio API ključeve i jasno obavještava preko pop-up prozora.
+- **FFmpeg Provjera:** Aplikacija sada asinkrono provjerava postojanje `ffmpeg.exe` pri pokretanju uploada i sprječava tiho pucanje programa.
+
+### v1.3.5
 - **Fix MediaInfo PTPImg zastavica:** Uklonjeni slomljeni `[img]` linkovi PTPImg zastavica iz MediaInfo parsera za titlove i zvuk; titlovi i jezici se sada u opisu prikazuju kao čisti, uredni i čitljivi tekst (npr. `German (DE), English (US), Spanish (ES)...`).
 
 ### v1.3.4

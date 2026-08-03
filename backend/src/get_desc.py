@@ -526,7 +526,7 @@ class DescriptionBuilder:
             images = image_list
             multi_screens = 0
         else:
-            images = meta["image_list"]
+            images = meta.get("image_list", [])
             multi_screens = int(self.config["DEFAULT"].get("multiScreens", 2))
         if meta.get("sorted_filelist"):
             multi_screens = 0
@@ -629,7 +629,7 @@ class DescriptionBuilder:
         if not signature:
             import os
             app_version = os.environ.get("APP_VERSION", "1.0")
-            signature = f"[center][size=1]Kreirano THR Autouploaderom v{app_version}[/size][/center]"
+            signature = f"[center][size=11]Kreirano THR Autouploaderom v{app_version}[/size][/center]"
             if self.tracker == "HUNO":
                 signature = signature.replace("[size=4]", "[size=8]")
         desc_parts.append(signature)

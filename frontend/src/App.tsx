@@ -75,79 +75,85 @@ function App() {
   const [showValidation, setShowValidation] = useState(false);
   const [validationData, setValidationData] = useState<any>(null);
 
-  // Logovi terminala
-  const [logs, setLogs] = useState<string[]>([
-    "[SISTEM] Aplikacija uspješno pokrenuta. Sve opcije su dostupne kroz GUI.",
-    "Čekam unos mape..."
-  ]);
-  const logEndRef = useRef<HTMLDivElement>(null);
+  // Status obrade
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [uploadedUrl, setUploadedUrl] = useState("");
+  const [dupeText, setDupeText] = useState<string>("");
+  const isDupeContext = useRef(false);
+  const wasSkippedContext = useRef(false);
 
   useEffect(() => {
     const unlisten = listen<string>("upload-log", (event) => {
       let logLine = event.payload;
-      
-      // Makni originalni python prefix da izbjegnemo [INFO] [INFO]
       let originalLine = logLine;
       if (logLine.startsWith("[INFO] ")) {
           logLine = logLine.substring(7);
       }
 
-      if (originalLine.includes("mkbrr hashing")) {
-        return; // Preskacemo mkbrr spam
-      }
-
-      // Prijevodi i omekšavanje sirovih Python logova
-      if (originalLine.includes("401") && (originalLine.includes("TMDb") || originalLine.includes("search"))) {
-        logLine = "[GREŠKA] Odbijen pristup TMDB-u (401). Vaš TMDB API ključ je neispravan. Molimo provjerite postavke!";
-      } else if (originalLine.includes("TMDb was unable to find anything from external IDs")) {
-        logLine = "[INFO] Pretraga putem vanjskih ID-eva nije uspjela, pokušavam po imenu...";
-      } else if (originalLine.includes("Unable to find a matching TMDb entry")) {
-        logLine = "[UPOZORENJE] Nije pronađen odgovarajući film/serija na TMDB-u.";
-      } else if (originalLine.includes("DEBUG:")) {
-        return; // Preskačemo sve debug logove kako bi ekran bio čišći
-      } else if (originalLine.includes("Gathering info for")) {
-        logLine = originalLine.replace("Gathering info for", "[INFO] Prikupljam informacije za datoteku:");
-      } else if (originalLine.includes("Building meta data")) {
-        logLine = "[INFO] Generiram metapodatke...";
-      } else if (originalLine.includes("Database Info")) {
-        logLine = "[INFO] Baza podataka:";
-      } else if (originalLine.includes("Processing") && originalLine.includes("for upload")) {
-        logLine = originalLine.replace("Processing", "[INFO] Pripremam").replace("for upload", "za upload");
-      } else if (originalLine.includes("Searching for existing torrents on:")) {
-        logLine = originalLine.replace("Searching for existing torrents on:", "[INFO] Provjeravam postoje li već ovakvi torrenti na trackeru:");
-      } else if (originalLine.includes("Potential dupes from")) {
-        logLine = originalLine.replace("Potential dupes from", "[UPOZORENJE] Pronađeni mogući duplikati na trackeru:");
-      } else if (originalLine.includes("Found potential dupes on:")) {
-        logLine = originalLine.replace("Found potential dupes on:", "[INFO] Duplikati pronađeni na trackeru:");
-      } else if (originalLine.includes("Trackers passed all checks:")) {
-        logLine = originalLine.replace("Trackers passed all checks:", "[INFO] Provjere uspješno završene za tracker:");
-      } else if (originalLine.includes("Successfully obtained and uploaded")) {
-        logLine = originalLine.replace("Successfully obtained and uploaded", "[INFO] Uspješno preuzete i uploadane slike (ukupno:").replace("images", ")");
-      } else if (originalLine.includes("was specified. Using complete folder for torrent creation.")) {
-        logLine = "[INFO] Odabrana je opcija 'Zadrži mapu'. Torrent će sadržavati izvornu mapu.";
-      } else if (originalLine.includes("Processing uploads to trackers")) {
-        logLine = "[INFO] Šaljem torrent datoteku i metapodatke na tracker...";
-      } else if (originalLine.includes("--no-seed was passed") || originalLine.includes("Add torrent manually to the client") || originalLine.includes("Killing stuck worker process")) {
-        return; // Ove informacije su nebitne korisniku
-      } else if (originalLine.includes("All tracker uploads processed")) {
-        logLine = "[INFO] Upload proces je završen!";
-      } else {
-        logLine = originalLine;
-      }
-
-      // Ako linija ne počinje sa "[" znači da je sirovi log bez prefiksa (npr. naslov iz baze)
-      if (!logLine.startsWith("[") && logLine.trim() !== "") {
-        // Dodajemo samo mali razmak radi preglednosti
-        logLine = "      " + logLine;
-      }
-
-      setLogs((prevLogs) => {
-        // Spriječi spamanje iste greške 5 puta zaredom (što Python voli raditi kad vrti retry)
-        if (prevLogs.length > 0 && prevLogs[prevLogs.length - 1] === logLine) {
-          return prevLogs;
+      if (originalLine.includes("mkbrr hashing")) return;
+      if (originalLine.includes("DEBUG:")) return;
+      
+      if (originalLine.includes("[SISTEM] Uspjeh!")) {
+        if (!wasSkippedContext.current) {
+            setSuccessMessage("Završeno! Provjerite logove.");
+            setErrorMessage("");
+        } else {
+            setErrorMessage("Prekinuto: Pronađen je duplikat! (Završeno bez uploada)");
         }
-        return [...prevLogs, logLine];
-      });
+        setIsProcessing(false);
+        isDupeContext.current = false;
+        return;
+      } else if (originalLine.includes("[SISTEM] Greška!")) {
+        setErrorMessage(prev => prev ? prev : "Proces je završio s greškom.");
+        setIsProcessing(false);
+        isDupeContext.current = false;
+        return;
+      }
+
+      if (originalLine.includes("401") && (originalLine.includes("TMDb") || originalLine.includes("search"))) {
+        setErrorMessage("Odbijen pristup TMDB-u. Vaš TMDB API ključ je neispravan.");
+      } else if (originalLine.includes("Unable to find a matching TMDb entry")) {
+        setErrorMessage("Nije pronađen odgovarajući film/serija na TMDB-u.");
+      } else if (originalLine.includes("Gathering info for")) {
+        setProcessingMessage("Prikupljam informacije o datoteci...");
+      } else if (originalLine.includes("Building meta data")) {
+        setProcessingMessage("Povezujem se s filmskim bazama...");
+      } else if (originalLine.includes("Searching for existing torrents on:")) {
+        setProcessingMessage("Provjeravam duplikate na trackeru...");
+      } else if (originalLine.includes("Potential dupes from")) {
+        setErrorMessage("Pronađen je mogući duplikat na trackeru! (Oprez)");
+        isDupeContext.current = true;
+      } else if (originalLine.includes("Skipping") && originalLine.includes("due to dupes")) {
+        wasSkippedContext.current = true;
+      } else if (isDupeContext.current) {
+        if (originalLine.trim() === "" || originalLine.startsWith("[INFO]") || originalLine.startsWith("[ERROR]") || logLine.includes("Gathering info") || logLine.includes("Building meta") || logLine.includes("Upload failed") || logLine.includes("Uploading to")) {
+          // Keep capturing if it's just a formatted text block (not starting with [INFO] usually, but if it does, check its contents)
+          if (!originalLine.includes("Gathering info") && !originalLine.includes("Building meta") && !originalLine.includes("Upload failed") && !originalLine.includes("Uploading to") && !originalLine.includes("Processing uploads")) {
+             setDupeText(prev => prev + logLine.trim() + "\n");
+          } else {
+             isDupeContext.current = false;
+          }
+        } else {
+          setDupeText(prev => prev + logLine.trim() + "\n");
+        }
+      } else if (originalLine.includes("Successfully obtained and uploaded")) {
+        setProcessingMessage("Uploadani screenshotovi na Slike.THR...");
+      } else if (originalLine.includes("Processing uploads to trackers")) {
+        setProcessingMessage("Šaljem podatke na tracker...");
+        setErrorMessage(""); // clear dupe warning if we proceed
+      } else if (originalLine.includes("THR: http")) {
+        // originalLine could be "[INFO] THR: https://..."
+        const urlPart = originalLine.split("THR:")[1];
+        if (urlPart) {
+          setUploadedUrl(urlPart.trim());
+        }
+      } else if (originalLine.includes("Uploaded to") && originalLine.includes("->")) {
+        const url = originalLine.split("->")[1].trim();
+        setUploadedUrl(url);
+      }
     });
 
     return () => {
@@ -155,26 +161,44 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [logs]);
-
-  const handleDryRun = async (folderPath: string) => {
+  const handleDryRun = async (folderPath: string, isAutoScan: boolean = false) => {
     if (!folderPath) return;
-    
-    if (!tmdbApiKey || tmdbApiKey.trim() === "") {
-      setLogs((prev) => [...prev, `[SISTEM] TMDB API ključ nije unesen u GUI. Oslanjam se na backend config.py ako postoji.`]);
+
+    // Dummy proof: API Keys
+    if (!thrApiKey || thrApiKey.trim() === "" || !tmdbApiKey || tmdbApiKey.trim() === "" || !slikeApiKey || slikeApiKey.trim() === "") {
+      setErrorMessage("Nedostaju API ključevi! Molimo kliknite na kotačić (Postavke) gore desno i unesite THR, TMDB i Slike.THR ključeve prije uploada.");
+      return;
+    }
+
+    // Dummy proof: FFmpeg
+    const hasFfmpeg = await invoke("check_ffmpeg_exists");
+    if (!hasFfmpeg) {
+      setErrorMessage("Ffmpeg.exe nije pronađen! Molimo preuzmite FFmpeg (samo ffmpeg.exe) i stavite ga u isti folder gdje se nalazi aplikacija (ili u sistemski PATH).");
+      return;
     }
 
     setSelectedFolder(folderPath);
-    setLogs((prev) => [...prev, `[SISTEM] Analiziram datoteke: ${folderPath}`]);
+    setIsProcessing(true);
+    setProcessingMessage(isAutoScan ? "Započinjem analizu datoteke..." : "Pripremam opis i simuliram upload...");
+    setErrorMessage("");
+    setSuccessMessage("");
+    setIsProcessing(true);
+    setProcessingMessage("Analiziram podatke...");
+    setShowValidation(false);
+    setDupeText("");
     
     try {
       const result = await invoke("dry_run_upload", { 
           folderPath: folderPath,
           tmdbApiKey: tmdbApiKey,
           slikeApiKey: slikeApiKey,
-          thrApiKey: thrApiKey
+          thrApiKey: thrApiKey,
+          isAutoScan: isAutoScan,
+          tmdbId: isAutoScan ? "" : apiId,
+          category: isAutoScan ? "" : category,
+          typeVal: isAutoScan ? "" : type,
+          resolution: isAutoScan ? "" : resolution,
+          manualName: isAutoScan ? "" : manualName
       });
       const parsedData = JSON.parse(result as string);
       const meta = parsedData.dry_run_metadata;
@@ -189,48 +213,63 @@ function App() {
       if (meta.igdb_id && meta.igdb_id !== 0) setApiId(meta.igdb_id.toString());
       if (meta.discogs_id && meta.discogs_id !== 0) setApiId(meta.discogs_id.toString());
       
-      setLogs((prev) => [...prev, `[SISTEM] Analiza završena. Čekam potvrdu korisnika.`]);
+      setSuccessMessage("Torrent će biti uspješno uploadan!");
       setShowValidation(true);
     } catch (error) {
       let rawError = String(error);
       let cleanError = rawError;
       
       if (rawError.includes("No results found")) {
-        cleanError = "Aplikacija nije mogla automatski prepoznati film/seriju iz naziva datoteke. Molimo popunite podatke ručno.";
+        cleanError = "Nisam mogao automatski prepoznati film/seriju. Molimo popunite podatke ručno.";
       } else if (rawError.includes("Upload Assistant does not support no audio media")) {
         cleanError = "Ova datoteka nema audio traku (nepodržan format).";
       } else {
-        // Fallback: očisti dugačke logove i prikaži samo bitno
         if (rawError.includes("Configuration validation failed") || rawError.includes("Validacija konfiguracije nije uspjela")) {
            const splitKey = rawError.includes("Configuration validation failed") ? "Configuration validation failed:" : "Validacija konfiguracije nije uspjela:";
-           cleanError = "Greška u config.py postavkama: " + rawError.split(splitKey)[1].substring(0, 150) + "...";
+           cleanError = "Greška u postavkama: " + rawError.split(splitKey)[1].substring(0, 150) + "...";
         } else {
-           cleanError = "Nisam pronašao metapodatke. Detalji: " + rawError.substring(0, 100);
+           cleanError = "Greška tijekom analize: " + rawError.substring(0, 100);
         }
       }
       
-      setLogs((prev) => [...prev, `[UPOZORENJE] ${cleanError}`]);
-      // Ako dry-run pukne, svejedno otvaramo modal da korisnik može ručno unijeti
+      setErrorMessage(cleanError);
       setShowValidation(true);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleUpload = async (isDryRun: boolean = false) => {
     if (!selectedFolder) return;
 
-    if (!thrApiKey || thrApiKey.trim() === "" || !slikeApiKey || slikeApiKey.trim() === "") {
-      setLogs((prev) => [...prev, `[SISTEM] THR ili Slike.THR ključ nije unesen u GUI. Oslanjam se na backend config.py ako postoji.`]);
+    // Dummy proof: API Keys
+    if (!thrApiKey || thrApiKey.trim() === "" || !tmdbApiKey || tmdbApiKey.trim() === "" || !slikeApiKey || slikeApiKey.trim() === "") {
+      setErrorMessage("Nedostaju API ključevi! Molimo kliknite na kotačić (Postavke) gore desno i unesite THR, TMDB i Slike.THR ključeve prije uploada.");
+      return;
+    }
+
+    // Dummy proof: FFmpeg
+    const hasFfmpeg = await invoke("check_ffmpeg_exists");
+    if (!hasFfmpeg) {
+      setErrorMessage("Ffmpeg.exe nije pronađen! Molimo preuzmite FFmpeg (samo ffmpeg.exe) i stavite ga u isti folder gdje se nalazi aplikacija (ili u sistemski PATH).");
+      return;
     }
 
     if (!apiId || apiId.trim() === "") {
       if (!validationData || !validationData.title) {
-        setLogs((prev) => [...prev, `[ERROR] Automatsko prepoznavanje nije uspjelo! Morate ručno unijeti API ID (IMDb ili TMDb ID).`]);
+        setErrorMessage("Automatsko prepoznavanje nije uspjelo! Morate ručno unijeti API ID (IMDb ili TMDb ID).");
         return;
       }
     }
 
     setShowValidation(false);
-    setLogs((prev) => [...prev, `[SISTEM] Pokrećem ${isDryRun ? 'simulaciju (Dry-Run)' : 'konačni upload'} za: ${selectedFolder}`]);
+    setIsProcessing(true);
+    setProcessingMessage(isDryRun ? "Simuliram upload..." : "Šaljem torrent...");
+    setErrorMessage("");
+    setSuccessMessage("");
+    setUploadedUrl("");
+    setDupeText("");
+    wasSkippedContext.current = false;
     
     try {
       await invoke("start_upload", {
@@ -259,11 +298,16 @@ function App() {
           skip_dupe_check: skipDupeCheck,
           keep_folder: keepFolder,
           manual_name: manualName,
-          is_dry_run: isDryRun
+          is_dry_run: isDryRun,
+          custom_bbcode: validationData?.bbcode_description || ""
         }
       });
+      // Do NOT set isProcessing(false) or SuccessMessage here! 
+      // start_upload returns immediately because it spawns a background thread.
+      // The process ending will emit [SISTEM] Uspjeh/Greška to upload-log, which will turn off the spinner.
     } catch (error) {
-      setLogs((prev) => [...prev, `[ERROR] Greška pri pokretanju uploada: ${error}`]);
+      setErrorMessage(`Greška pri pokretanju uploada: ${error}`);
+      setIsProcessing(false);
     }
   };
 
@@ -273,7 +317,7 @@ function App() {
         const paths = (event.payload as any).paths;
         if (paths && paths.length > 0) {
           setIsDragging(false);
-          handleDryRun(paths[0]);
+          handleDryRun(paths[0], true);
         }
       } else if (event.payload.type === 'enter') {
         setIsDragging(true);
@@ -523,6 +567,8 @@ function App() {
               />
             </div>
           )}
+
+          {/* BBCode Preview is intentionally removed per user request for dummy-friendly UX */}
         </div>
       )}
 
@@ -561,23 +607,57 @@ function App() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem' }}>
-        <button className="btn-upload" style={{ backgroundColor: '#2563eb' }} onClick={() => handleUpload(true)} disabled={!selectedFolder}>
-          Simuliraj Upload (Dry-Run)
-        </button>
-        <button className="btn-upload" onClick={() => handleUpload(false)} disabled={!selectedFolder}>
+      <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column', alignItems: 'center', marginTop: '1rem' }}>
+        <button className="btn-upload" style={{ backgroundColor: '#10b981', width: '100%', fontSize: '1.2rem', padding: '1rem' }} onClick={() => handleUpload(false)} disabled={!selectedFolder || isProcessing}>
           Započni Upload na THR
         </button>
       </div>
 
-      <div className="terminal-log">
-        {logs.map((log, index) => (
-          <div key={index} className={`log-line ${log.startsWith("[ERROR]") ? "error" : log.startsWith("[SISTEM]") ? "success" : ""}`}>
-            {log}
-          </div>
-        ))}
-        <div ref={logEndRef} />
-      </div>
+      {isProcessing && (
+        <div style={{
+          marginTop: '2rem',
+          textAlign: 'center',
+          padding: '2rem',
+          backgroundColor: '#1a1a24',
+          borderRadius: '8px',
+          border: '1px solid #333'
+        }}>
+          <div className="spinner" style={{
+            border: '4px solid rgba(255, 255, 255, 0.1)',
+            borderLeftColor: '#2563eb',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem auto'
+          }}></div>
+          <p style={{ color: '#fff', fontSize: '1.1rem' }}>{processingMessage || "Molimo pričekajte..."}</p>
+        </div>
+      )}
+
+      {errorMessage && !isProcessing && (
+        <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#451a1a', border: '1px solid #ef4444', borderRadius: '8px', color: '#fca5a5' }}>
+          <strong>Greška:</strong> {errorMessage}
+          {dupeText && (
+            <div style={{ marginTop: '10px', padding: '10px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '4px', whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+              {dupeText}
+            </div>
+          )}
+        </div>
+      )}
+
+      {successMessage && !isProcessing && (
+        <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#14532d', border: '1px solid #22c55e', borderRadius: '8px', color: '#bbf7d0', textAlign: 'center' }}>
+          <strong>Uspjeh!</strong> {successMessage}
+          {uploadedUrl && (
+            <div style={{ marginTop: '1rem' }}>
+              <a href={uploadedUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#4ade80', textDecoration: 'underline', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                Klikni ovdje za pregled torrenta
+              </a>
+            </div>
+          )}
+        </div>
+      )}
       
       <div className="status-bar">
         Spremno za rad

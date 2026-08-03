@@ -182,6 +182,7 @@ pub struct UploadPayload {
     keep_folder: bool,
     manual_name: String,
     is_dry_run: bool,
+    custom_bbcode: String,
 }
 
 #[tauri::command]
@@ -245,6 +246,15 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
 
     if payload.is_dry_run {
         args.push("--debug".to_string());
+    }
+    
+    let backend_dir = get_backend_dir();
+    
+    if !payload.custom_bbcode.is_empty() {
+        let custom_bbcode_path = backend_dir.join("data").join("custom_bbcode.txt");
+        let _ = std::fs::write(&custom_bbcode_path, &payload.custom_bbcode);
+        args.push("--descfile".to_string());
+        args.push("data/custom_bbcode.txt".to_string());
     }
     
     if payload.client_type == "none" {
@@ -338,10 +348,19 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
     use std::os::windows::process::CommandExt;
 
     let python_path = backend_dir.join("dist").join("upload").join("upload.exe");
-    let mut cmd = Command::new(python_path);
-    cmd.current_dir(backend_dir)
-        .args(&args)
-        .env("PYTHONIOENCODING", "utf8")
+    let mut cmd;
+    if python_path.exists() {
+        cmd = Command::new(&python_path);
+        cmd.current_dir(&backend_dir)
+           .args(&args);
+    } else {
+        cmd = Command::new("python");
+        cmd.current_dir(&backend_dir)
+           .arg("upload.py")
+           .args(&args);
+    }
+    
+    cmd.env("PYTHONIOENCODING", "utf8")
         .env("PYTHONUTF8", "1")
         .env("SLIKETHR_API_KEY", &payload.slike_api_key)
         .env("THR_API_KEY", &payload.thr_api_key)
@@ -400,12 +419,51 @@ async fn dry_run_upload(
     folder_path: String,
     tmdb_api_key: String,
     slike_api_key: String,
-    thr_api_key: String
+    thr_api_key: String,
+    is_auto_scan: bool,
+    tmdb_id: String,
+    category: String,
+    type_val: String,
+    resolution: String,
+    manual_name: String
 ) -> Result<String, String> {
     let mut args = vec![
         folder_path.clone(),
         "--meta-only".to_string(),
     ];
+
+    if !manual_name.is_empty() {
+        args.push("-name".to_string());
+        args.push(manual_name.clone());
+    }
+
+    if !tmdb_id.is_empty() {
+        if tmdb_id.starts_with("tt") {
+            args.push("-imdb".to_string());
+        } else if category == "game" {
+            args.push("-igdb".to_string());
+        } else if category == "music" {
+            args.push("-discogs".to_string());
+        } else {
+            args.push("-tmdb".to_string());
+        }
+        args.push(tmdb_id.clone());
+    }
+    
+    if !category.is_empty() {
+        args.push("-c".to_string());
+        args.push(category.clone());
+    }
+
+    if !type_val.is_empty() {
+        args.push("-t".to_string());
+        args.push(type_val.clone());
+    }
+
+    if !resolution.is_empty() {
+        args.push("-res".to_string());
+        args.push(resolution.clone());
+    }
 
     let backend_dir = get_backend_dir();
 
@@ -436,15 +494,25 @@ async fn dry_run_upload(
     use std::os::windows::process::CommandExt;
 
     let python_path = backend_dir.join("dist").join("upload").join("upload.exe");
-    let mut cmd = Command::new(python_path);
-    cmd.current_dir(backend_dir)
-        .args(&args)
-        .env("PYTHONIOENCODING", "utf8")
+    let mut cmd;
+    if python_path.exists() {
+        cmd = Command::new(&python_path);
+        cmd.current_dir(&backend_dir)
+           .args(&args);
+    } else {
+        cmd = Command::new("python");
+        cmd.current_dir(&backend_dir)
+           .arg("upload.py")
+           .args(&args);
+    }
+    
+    cmd.env("PYTHONIOENCODING", "utf8")
         .env("PYTHONUTF8", "1")
         .env("SLIKETHR_API_KEY", &slike_api_key)
         .env("THR_API_KEY", &thr_api_key)
         .env("TMDB_API_KEY", &tmdb_api_key)
         .env("APP_VERSION", app.package_info().version.to_string())
+        .env("NO_BBCODE", if is_auto_scan { "1" } else { "0" })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -471,6 +539,43 @@ async fn dry_run_upload(
 }
 
 
+#[tauri::command]
+fn check_ffmpeg_exists() -> bool {
+    let exe_dir = std::env::current_exe()
+        .unwrap_or_else(|_| std::path::PathBuf::from("."))
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .to_path_buf();
+        
+    let local_ffmpeg = exe_dir.join("ffmpeg.exe");
+    if local_ffmpeg.exists() {
+        return true;
+    }
+    
+    // Fallback: check in current working directory as well (for dev mode)
+    let cwd_ffmpeg = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).join("ffmpeg.exe");
+    if cwd_ffmpeg.exists() {
+        return true;
+    }
+
+    // Check system PATH
+    #[cfg(target_os = "windows")]
+    use std::os::windows::process::CommandExt;
+    
+    let mut cmd = Command::new("ffmpeg");
+    cmd.arg("-version")
+       .stdout(Stdio::null())
+       .stderr(Stdio::null());
+       
+    #[cfg(target_os = "windows")]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    
+    cmd.status().map(|s| s.success()).unwrap_or(false)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -480,7 +585,8 @@ pub fn run() {
             dry_run_upload,
             save_settings,
             load_settings,
-            load_existing_config
+            load_existing_config,
+            check_ffmpeg_exists
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -26,6 +26,13 @@ class THR(UNIT3D):
     # The section below can be deleted if no changes are needed, as everything else is handled in UNIT3D.py
     # If advanced changes are required, copy the necessary functions from UNIT3D.py here
     # For example, if you need to modify the description, copy and paste the 'get_description' function and adjust it accordingly
+    
+    async def get_name(self, meta: dict[str, Any]) -> dict[str, str]:
+        if meta.get('manual_name'):
+            name = str(meta['manual_name'])
+        else:
+            name = str(meta.get('name', '')).replace('DD+', 'DDP')
+        return {"name": name}
 
     # If default UNIT3D categories, remove this function
     async def get_category_id(

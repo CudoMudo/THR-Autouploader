@@ -8,7 +8,7 @@ $BackendSource = Join-Path $ProjectRoot "backend"
 # Konfiguracija
 $TauriConfPath = Join-Path $ProjectRoot "frontend\src-tauri\tauri.conf.json"
 $TauriConf = Get-Content -Raw -Path $TauriConfPath | ConvertFrom-Json
-$ReleaseVersion = $TauriConf.version
+$ReleaseVersion = "1.4.0"
 $DesktopPath = [Environment]::GetFolderPath("Desktop")
 $TempReleaseFolder = Join-Path $DesktopPath "THRuploader_$ReleaseVersion"
 $OutZip = Join-Path $DesktopPath "THRuploader_v$($ReleaseVersion)_Portable.zip"
