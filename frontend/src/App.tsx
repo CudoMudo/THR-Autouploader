@@ -144,9 +144,9 @@ function App() {
       } else if (originalLine.includes("Processing uploads to trackers")) {
         setProcessingMessage("Šaljem podatke na tracker...");
         setErrorMessage(""); // clear dupe warning if we proceed
-      } else if (originalLine.includes("THR: http")) {
-        // originalLine could be "[INFO] THR: https://..."
-        const urlPart = originalLine.split("THR:")[1];
+      } else if (originalLine.includes("torrenthr.org/torrents/")) {
+        // Tracker output is [INFO] https://www.torrenthr.org/torrents/12345
+        const urlPart = originalLine.split("[INFO] ")[1];
         if (urlPart) {
           setUploadedUrl(urlPart.trim());
         }
