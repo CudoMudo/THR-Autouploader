@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import "./App.css";
 
 function App() {
@@ -651,7 +652,7 @@ function App() {
           <strong>Uspjeh!</strong> {successMessage}
           {uploadedUrl && (
             <div style={{ marginTop: '1rem' }}>
-              <a href={uploadedUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#4ade80', textDecoration: 'underline', fontSize: '1.2rem', fontWeight: 'bold' }}>
+              <a href={uploadedUrl} onClick={(e) => { e.preventDefault(); openUrl(uploadedUrl); }} style={{ color: '#4ade80', textDecoration: 'underline', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer' }}>
                 Klikni ovdje za pregled torrenta
               </a>
             </div>
