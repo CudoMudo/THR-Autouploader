@@ -68,6 +68,23 @@ async def run_ffmpeg(command: Any) -> tuple[Optional[int], bytes, bytes]:
     kwargs = {}
     if os.name == 'nt':
         kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+        if getattr(sys, 'frozen', False):
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", ".."))
+        else:
+            base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+            
+        candidate = os.path.join(base_dir, 'bin', 'ffmpeg.exe')
+        if os.path.exists(candidate):
+            cmd_list = list(command.compile(overwrite_output=True))
+            cmd_list[0] = candidate
+            process = await asyncio.create_subprocess_exec(
+                *cmd_list,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                **kwargs
+            )
+            stdout, stderr = await process.communicate()
+            return (process.returncode if process.returncode is not None else -1), stdout, stderr
 
     # On Linux prefer bundled amd/arm binary when present; otherwise fall back to system ffmpeg.
     if platform.system() == 'Linux':

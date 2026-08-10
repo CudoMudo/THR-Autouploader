@@ -36,6 +36,11 @@ class NameManager:
         self.common = COMMON(config=config)
 
     async def get_name(self, meta: Meta) -> tuple[str, str, str, list[str]]:
+        if meta.get('manual_name'):
+            name = meta['manual_name']
+            clean_name = await self.clean_filename(name)
+            return name, name, clean_name, []
+
         active_trackers: list[str] = [
             tracker for tracker in TRACKER_DISC_REQUIREMENTS
             if tracker in meta.get('trackers', [])
