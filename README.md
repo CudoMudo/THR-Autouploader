@@ -61,11 +61,9 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 ## Povijest Verzija (Changelog)
 
 ### v1.3.6 (Trenutna Verzija)
-- **Ispravljeno (Bug Fixes):**
-Ručni nazivi s razmacima: Ispravljen je argument parser (nargs) u backendu tako da GUI sada besprijekorno prosljeđuje i procesuira višerječne naslove (naslove s razmacima), umjesto da ih odsijeca na prvoj riječi.
-Bypass NameManagera (Prioritet korisnika): Backend sada automatski prepoznaje kada korisnik ručno upiše željeni naziv (manual name) unutar GUI-ja. Aplikacija poštuje tvoj unos i preskače forsirano generiranje novog (guessit) naziva.
-FFmpeg PyInstaller Fix: Riješen [WinError 2] problem kod generiranja screenshotova na Windows OS-u unutar Portable izdanja. Putanja do alata ffmpeg.exe je sada svjesna prekompajliranog okruženja.
-release: v1.3.6 - manual naming, args space fix, pyinstaller ffmpeg path
+- **Ručni nazivi s razmacima:** Ispravljen `nargs` argument kod parsiranja tako da GUI uredno prosljeđuje i procesuira višerječne naslove umjesto odsijecanja na prvoj riječi.
+- **Bypass NameManagera:** Backend sada automatski poštuje ručno upisani naziv (manual name) unesen iz GUI-ja te preskače forsirano generiranje novog naziva iz `guessit` biblioteke.
+- **FFmpeg PyInstaller Fix:** Riješen `[WinError 2]` problem kod generiranja screenshotova na Windows operativnom sustavu u portabilnom izdanju; putanja do `ffmpeg.exe` je sada svjesna prekompajliranog (`frozen`) `.exe` okruženja.
 
 ### v1.3.5
 - **Fix MediaInfo PTPImg zastavica:** Uklonjeni slomljeni `[img]` linkovi PTPImg zastavica iz MediaInfo parsera za titlove i zvuk; titlovi i jezici se sada u opisu prikazuju kao čisti, uredni i čitljivi tekst (npr. `German (DE), English (US), Spanish (ES)...`).
