@@ -23,6 +23,15 @@ GuessitFn = Callable[[str, Optional[dict[str, Any]]], dict[str, Any]]
 def guessit_fn(value: str, options: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     return cast(dict[str, Any], guessit_module.guessit(value, options))
 
+IMDB_HEADERS = {
+    "Content-Type": "application/json",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Origin": "https://www.imdb.com",
+    "Referer": "https://www.imdb.com/"
+}
 
 class ImdbManager:
     def safe_get(self, data: Any, path: list[str], default: Any = None) -> Any:
@@ -273,7 +282,7 @@ class ImdbManager:
                 response = await client.post(
                     "https://api.graphql.imdb.com/",
                     json=query,
-                    headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"},
+                    headers=IMDB_HEADERS,
                     timeout=10,
                 )
                 response.raise_for_status()
@@ -575,7 +584,7 @@ class ImdbManager:
 
             try:
                 async with httpx.AsyncClient() as client:
-                    response = await client.post(url, json=query, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"}, timeout=10)
+                    response = await client.post(url, json=query, headers=IMDB_HEADERS, timeout=10)
                     response.raise_for_status()
                     data = response.json()
             except Exception as e:
@@ -949,7 +958,7 @@ class ImdbManager:
                 response = await client.post(
                     "https://api.graphql.imdb.com/",
                     json=query,
-                    headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"},
+                    headers=IMDB_HEADERS,
                     timeout=10
                 )
                 response.raise_for_status()
