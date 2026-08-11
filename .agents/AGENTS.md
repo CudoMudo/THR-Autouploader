@@ -17,7 +17,9 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
    Za sigurno pakiranje releasea koristi se skripta `Pack-PortableRelease.ps1` iz root foldera koja to sve radi automatski (i skida veličinu ZIP-a sa 150MB na 12MB).
 
 **LOG RADOVA / CHANGELOG (Za Agente):**
-- **v1.3.6 Hotfixes:**
+- **v1.3.7:**
   - `NoneType object has no attribute closed` error: Riješen problem gdje se pri završetku rada (bez konzole iz GUI-ja) rušio PyInstaller jer je pokušavao ugasiti prazne (None) terminal streamove (`sys.stdin`, `stdout`, `stderr`).
-  - `IMDb API 403 Forbidden`: Riješen problem s dohvaćanjem podataka s IMDb GraphQL API-ja dodavanjem potrebnog `User-Agent` zaglavlja u `src/imdb.py`.
+  - `IMDb API 403 Forbidden`: Riješen problem s dohvaćanjem podataka s IMDb GraphQL API-ja dodavanjem potrebnih HTTP zaglavlja.
   - `tags.json error`: Implementirana 'silent' provjera (preskakanje) ako datoteka `tags.json` ne postoji na korisnikovom računalu (`src/tags.py`).
+  - `ffmpeg.exe`: Dodan statički ffmpeg binar u `backend/bin` kako bi portable verzija odmah radila s obradom medija bez potrebe za vanjskim alatima.
+  - `processLimit`: Smanjen zadani limit (default fallback) u konfiguraciji s 10 na 1.

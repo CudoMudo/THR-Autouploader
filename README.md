@@ -60,7 +60,14 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.3.6 (Trenutna Verzija)
+### v1.3.7 (Trenutna Verzija)
+* **Fix**: Riješen problem s PyInstaller crashiranjem (`NoneType object has no attribute closed`).
+* **Fix**: Riješen problem s IMDb API `403 Forbidden` greškom ubacivanjem ispravnih HTTP zaglavlja.
+* **Fix**: Riješen problem prikaza pogreške kod nedostajuće `tags.json` datoteke.
+* **Feature**: `ffmpeg.exe` je sada standardno uključen u `backend/bin` i stiže u paketu (Portable verzija).
+* **Konfiguracija**: Zadani `processLimit` smanjen s 10 na 1 u `example-config.py`.
+
+### v1.3.6
 - **Ručni nazivi s razmacima:** Ispravljen `nargs` argument kod parsiranja tako da GUI uredno prosljeđuje i procesuira višerječne naslove umjesto odsijecanja na prvoj riječi.
 - **Bypass NameManagera:** Backend sada automatski poštuje ručno upisani naziv (manual name) unesen iz GUI-ja te preskače forsirano generiranje novog naziva iz `guessit` biblioteke.
 - **FFmpeg PyInstaller Fix:** Riješen `[WinError 2]` problem kod generiranja screenshotova na Windows operativnom sustavu u portabilnom izdanju; putanja do `ffmpeg.exe` je sada svjesna prekompajliranog (`frozen`) `.exe` okruženja.
