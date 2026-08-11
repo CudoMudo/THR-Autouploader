@@ -216,7 +216,7 @@ config = {
 
         # Absolute limit on processed files in packs.
         # You might not want to process screens/mediainfo for 40 episodes in a season pack.
-        "processLimit": "10",
+        "processLimit": "1",
 
         # Providing the option to add a description header, in bbcode, at the top of the description section where supported
         # Can be overridden in a per-tracker setting by adding this same config
