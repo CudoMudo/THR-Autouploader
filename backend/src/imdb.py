@@ -273,7 +273,7 @@ class ImdbManager:
                 response = await client.post(
                     "https://api.graphql.imdb.com/",
                     json=query,
-                    headers={"Content-Type": "application/json"},
+                    headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"},
                     timeout=10,
                 )
                 response.raise_for_status()
@@ -575,7 +575,7 @@ class ImdbManager:
 
             try:
                 async with httpx.AsyncClient() as client:
-                    response = await client.post(url, json=query, headers={"Content-Type": "application/json"}, timeout=10)
+                    response = await client.post(url, json=query, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"}, timeout=10)
                     response.raise_for_status()
                     data = response.json()
             except Exception as e:
@@ -949,7 +949,7 @@ class ImdbManager:
                 response = await client.post(
                     "https://api.graphql.imdb.com/",
                     json=query,
-                    headers={"Content-Type": "application/json"},
+                    headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"},
                     timeout=10
                 )
                 response.raise_for_status()

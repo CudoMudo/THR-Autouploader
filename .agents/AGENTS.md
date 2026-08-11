@@ -15,3 +15,9 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
    - Izbaciti `backend/dist`, `backend/build` (zaostali PyInstaller buildovi).
    - Isprazniti `backend/tmp` i `backend/Torrents` (lokalni testni fajlovi poput filmova).
    Za sigurno pakiranje releasea koristi se skripta `Pack-PortableRelease.ps1` iz root foldera koja to sve radi automatski (i skida veličinu ZIP-a sa 150MB na 12MB).
+
+**LOG RADOVA / CHANGELOG (Za Agente):**
+- **v1.3.6 Hotfixes:**
+  - `NoneType object has no attribute closed` error: Riješen problem gdje se pri završetku rada (bez konzole iz GUI-ja) rušio PyInstaller jer je pokušavao ugasiti prazne (None) terminal streamove (`sys.stdin`, `stdout`, `stderr`).
+  - `IMDb API 403 Forbidden`: Riješen problem s dohvaćanjem podataka s IMDb GraphQL API-ja dodavanjem potrebnog `User-Agent` zaglavlja u `src/imdb.py`.
+  - `tags.json error`: Implementirana 'silent' provjera (preskakanje) ako datoteka `tags.json` ne postoji na korisnikovom računalu (`src/tags.py`).

@@ -1892,7 +1892,7 @@ async def do_the_thing(base_dir: str) -> None:
             connect_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await connect_task
-        if not sys.stdin.closed:
+        if sys.stdin and not sys.stdin.closed:
             cleanup_manager.reset_terminal()
 
 

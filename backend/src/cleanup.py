@@ -207,10 +207,10 @@ class CleanupManager:
             return  # Skip terminal reset on Windows and Android
 
         try:
-            if not sys.stderr.closed:
+            if sys.stderr and not sys.stderr.closed:
                 sys.stderr.flush()
 
-            if hasattr(sys.stdin, 'isatty') and sys.stdin.isatty() and not sys.stdin.closed:
+            if sys.stdin and hasattr(sys.stdin, 'isatty') and sys.stdin.isatty() and not sys.stdin.closed:
                 try:
                     subprocess.run(["stty", "sane"], check=False)
                     if erase_key is not None:
@@ -223,7 +223,7 @@ class CleanupManager:
                 except OSError:
                     pass
 
-            if not sys.stdout.closed:
+            if sys.stdout and not sys.stdout.closed:
                 try:
                     sys.stdout.write("\033[0m")
                     sys.stdout.flush()
@@ -239,12 +239,12 @@ class CleanupManager:
                 else:
                     subprocess.run(["sh", "-c", "jobs -p | xargs -r kill 2>/dev/null"], check=False)
 
-            if not sys.stderr.closed:
+            if sys.stderr and not sys.stderr.closed:
                 sys.stderr.flush()
 
         except Exception as e:
             try:
-                if not sys.stderr.closed:
+                if sys.stderr and not sys.stderr.closed:
                     sys.stderr.write(f"Error during terminal reset: {e}\n")
                     sys.stderr.flush()
             except Exception:
@@ -252,7 +252,7 @@ class CleanupManager:
 
 
 # Wrapped "erase key check and save" in tty check so that Python won't complain if UA is called by a script
-if hasattr(sys.stdin, 'isatty') and sys.stdin.isatty() and not sys.stdin.closed:
+if sys.stdin and hasattr(sys.stdin, 'isatty') and sys.stdin.isatty() and not sys.stdin.closed:
     try:
         output = subprocess.check_output(['stty', '-a']).decode()
         match = re.search(r' erase = (\S+);', output)
