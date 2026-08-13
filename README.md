@@ -60,7 +60,11 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.3.7 (Trenutna Verzija)
+### v1.3.8 (Trenutna Verzija)
+* **Feature**: Dodana ručna kvačica "Hrvatski titl" u GUI (korisno kao *failsafe* kada automatski parser ne uspije pročitati jezik iz foldera ili MediaInfoa).
+* **Feature**: Dodana ručna kvačica "Osobni rls" (Personal Release) u GUI. Obje kvačice su sada ispravno povezane s Live Tracker API-jem koji ih uredno obrađuje i ispisuje uz torrente i na IRC-u.
+
+### v1.3.7
 * **Fix**: Riješen problem s PyInstaller crashiranjem (`NoneType object has no attribute closed`).
 * **Fix**: Riješen problem s IMDb API `403 Forbidden` greškom ubacivanjem ispravnih HTTP zaglavlja.
 * **Fix**: Riješen problem prikaza pogreške kod nedostajuće `tags.json` datoteke.

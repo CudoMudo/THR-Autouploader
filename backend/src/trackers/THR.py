@@ -106,6 +106,8 @@ class THR(UNIT3D):
     async def get_additional_data(self, meta: Meta) -> dict[str, Any]:
         data = {
             'mod_queue_opt_in': await self.get_flag(meta, 'modq'),
+            'hrvatski_titl': 1 if meta.get('hr_titl') else 0,
+            'personal_release': 1 if meta.get('personalrelease') else 0,
         }
 
         return data

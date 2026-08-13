@@ -182,6 +182,8 @@ pub struct UploadPayload {
     keep_folder: bool,
     manual_name: String,
     is_dry_run: bool,
+    hrvatski_titl: bool,
+    personal_release: bool,
 }
 
 #[tauri::command]
@@ -204,6 +206,14 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
 
     if payload.is_anon {
         args.push("-anon".to_string());
+    }
+
+    if payload.hrvatski_titl {
+        args.push("--hr-titl".to_string());
+    }
+
+    if payload.personal_release {
+        args.push("--personalrelease".to_string());
     }
 
     if payload.skip_dupe_check {

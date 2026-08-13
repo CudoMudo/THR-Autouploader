@@ -70,6 +70,8 @@ function App() {
 
   // Nove opcije
   const [manualName, setManualName] = useState("");
+  const [hrvatskiTitl, setHrvatskiTitl] = useState(false);
+  const [personalRls, setPersonalRls] = useState(false);
   const [apiId, setApiId] = useState(""); // Univerzalni ID
   const [gameInstructions, setGameInstructions] = useState("");
   const [showValidation, setShowValidation] = useState(false);
@@ -259,7 +261,9 @@ function App() {
           skip_dupe_check: skipDupeCheck,
           keep_folder: keepFolder,
           manual_name: manualName,
-          is_dry_run: isDryRun
+          is_dry_run: isDryRun,
+          hrvatski_titl: hrvatskiTitl,
+          personal_release: personalRls
         }
       });
     } catch (error) {
@@ -526,38 +530,64 @@ function App() {
         </div>
       )}
 
-      <div style={{ marginTop: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1.5rem', color: '#ccc' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <input 
-            type="checkbox" 
-            id="anonCheck"
-            checked={isAnon}
-            onChange={e => setIsAnon(e.target.checked)}
-            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-          />
-          <label htmlFor="anonCheck" style={{ cursor: 'pointer' }}>Anoniman Upload</label>
+      <div style={{ marginTop: '1.5rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: '#ccc', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input 
+              type="checkbox" 
+              id="hrTitlCheck"
+              checked={hrvatskiTitl}
+              onChange={e => setHrvatskiTitl(e.target.checked)}
+              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#60a5fa' }}
+            />
+            <label htmlFor="hrTitlCheck" style={{ cursor: 'pointer', color: '#60a5fa', fontWeight: 'bold' }}>Hrvatski titl</label>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input 
+              type="checkbox" 
+              id="personalCheck"
+              checked={personalRls}
+              onChange={e => setPersonalRls(e.target.checked)}
+              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#c084fc' }}
+            />
+            <label htmlFor="personalCheck" style={{ cursor: 'pointer', color: '#c084fc', fontWeight: 'bold' }}>Osobni RLS (Personal RLS)</label>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input 
+              type="checkbox" 
+              id="anonCheck"
+              checked={isAnon}
+              onChange={e => setIsAnon(e.target.checked)}
+              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+            />
+            <label htmlFor="anonCheck" style={{ cursor: 'pointer' }}>Anoniman Upload</label>
+          </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <input 
-            type="checkbox" 
-            id="dupeCheck"
-            checked={skipDupeCheck}
-            onChange={e => setSkipDupeCheck(e.target.checked)}
-            style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#ef4444' }}
-          />
-          <label htmlFor="dupeCheck" style={{ cursor: 'pointer', color: '#ef4444' }}>Ignoriraj duplikate (Force Upload)</label>
-        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input 
+              type="checkbox" 
+              id="dupeCheck"
+              checked={skipDupeCheck}
+              onChange={e => setSkipDupeCheck(e.target.checked)}
+              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#ef4444' }}
+            />
+            <label htmlFor="dupeCheck" style={{ cursor: 'pointer', color: '#ef4444' }}>Ignoriraj duplikate (Force Upload)</label>
+          </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <input 
-            type="checkbox" 
-            id="keepFolderCheck"
-            checked={keepFolder}
-            onChange={e => setKeepFolder(e.target.checked)}
-            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-          />
-          <label htmlFor="keepFolderCheck" style={{ cursor: 'pointer' }}>Zadrži mapu (Uključi titlove)</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input 
+              type="checkbox" 
+              id="keepFolderCheck"
+              checked={keepFolder}
+              onChange={e => setKeepFolder(e.target.checked)}
+              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+            />
+            <label htmlFor="keepFolderCheck" style={{ cursor: 'pointer' }}>Zadrži mapu</label>
+          </div>
         </div>
       </div>
 
