@@ -31,3 +31,5 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
 - **v1.3.9:**
   - **Kompletne Video Kategorije:** U GUI dropdown dodana puna lista video kategorija s TorrentHR-a: Crtani Filmovi (18), Dokumentarni Filmovi (12), Anime (31), Filmovi HD (17), Filmovi SD (4), Filmovi DVD (14), Filmovi BD (40), Serije HD (34), Serije SD (7).
   - **Backend Parser & Tracker Mapiranje:** U `backend/src/args.py` uklonjena restrikcija na `-c` argument, a u `backend/src/trackers/THR.py` ugrađeno direktno mapiranje numeričkih ID-eva i precizno grananje kategorija.
+  - **Arhitektonska Lekcija (Interni tip vs. Tracker KatID):** Interni `meta['category']` MORA uvijek ostati `MOVIE` ili `TV` jer o tome ovise TMDb pretraga i generator punog naziva torrenta (`get_name.py`). Tracker kategorije (18, 12, 31, itd.) se mapiraju isključivo na tracker razini (`category_id`).
+  - **Pravilo o "Auto" poljima:** Sva polja koja korisnik u GUI-ju ostavi na "Auto" (prazno) moraju 100% prepustiti odluku ugrađenoj automatici i MediaInfo analizi. Ručni unos služi samo kao izolirani override.
