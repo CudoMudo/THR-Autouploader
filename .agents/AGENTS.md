@@ -23,3 +23,7 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
   - `tags.json error`: Implementirana 'silent' provjera (preskakanje) ako datoteka `tags.json` ne postoji na korisnikovom računalu (`src/tags.py`).
   - `ffmpeg.exe`: Dodan statički ffmpeg binar u `backend/bin` kako bi portable verzija odmah radila s obradom medija bez potrebe za vanjskim alatima.
   - `processLimit`: Smanjen zadani limit (default fallback) u konfiguraciji s 10 na 1.
+
+- **v1.3.8:**
+  - **Failsafe Zastavice:** Dodane ručne kvačice za 'Hrvatski titl' i 'Osobni rls' (Personal Release) u GUI.
+  - **Arhitektonska Lekcija:** Svi backend (Live) sustavi već automatski parsiraju MediaInfo za hrvatske titlove. Autouploader samo prosljeđuje failsafe vrijednosti, ne duplicira tu logiku unutar sebe.
