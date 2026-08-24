@@ -1275,8 +1275,17 @@ class Prep:
 
     async def get_cat(self, _video: str, meta: dict[str, Any]) -> Optional[str]:
         if meta.get('manual_category'):
-            manual_category = meta.get('manual_category')
-            return manual_category.upper() if isinstance(manual_category, str) else None
+            manual_cat_str = str(meta.get('manual_category') or '').strip().upper()
+            if manual_cat_str in ('MOVIE', 'FILM', 'FILMOVI'):
+                return "MOVIE"
+            elif manual_cat_str in ('TV', 'SERIJA', 'SERIJE', 'SERIES'):
+                return "TV"
+            elif manual_cat_str in ('17', '4', '14', '40', 'MOVIE_HD', 'MOVIE_SD', 'MOVIE_DVD', 'MOVIE_BD'):
+                return "MOVIE"
+            elif manual_cat_str in ('34', '7', 'TV_HD', 'TV_SD'):
+                return "TV"
+            # For 18 (Crtani), 12 (Dokumentarni), 31 (Anime), or other tracker categories:
+            # Do NOT force a wrong internal category. Fall through to auto-detection (TV vs MOVIE)!
 
         path_patterns = [
             r'(?i)[\\/](?:tv|tvshows|tv.shows|series|shows)[\\/]',

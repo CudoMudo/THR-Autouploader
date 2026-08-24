@@ -37,40 +37,42 @@ class THR(UNIT3D):
     ) -> dict[str, str]:
         _ = (category, reverse, mapping_only)
         
-        raw_cat = str(meta.get('manual_category') or meta.get('category') or '').strip()
-        if raw_cat.isdigit() and int(raw_cat) > 0:
-            return {'category_id': raw_cat}
+        # 1. Eksplicitni ručni odabir specifične kategorije (npr. Crtići 18, Dokumentarci 12, Anime 31, HD/SD ID-evi)
+        raw_manual = str(meta.get('manual_category') or '').strip().upper()
+        if raw_manual in ('18', 'CRTICI', 'CRTIĆI', 'ANIMATION', 'CARTOON', 'CARTOONS'):
+            return {'category_id': '18'}
+        elif raw_manual in ('12', 'DOCU', 'DOCUMENTARY', 'DOKUMENTARCI', 'DOKUMENTARNI', 'DOKU'):
+            return {'category_id': '12'}
+        elif raw_manual in ('31', 'ANIME'):
+            return {'category_id': '31'}
+        elif raw_manual in ('17', 'MOVIE_HD'):
+            return {'category_id': '17'}
+        elif raw_manual in ('4', 'MOVIE_SD'):
+            return {'category_id': '4'}
+        elif raw_manual in ('14', 'MOVIE_DVD'):
+            return {'category_id': '14'}
+        elif raw_manual in ('40', 'MOVIE_BD'):
+            return {'category_id': '40'}
+        elif raw_manual in ('34', 'TV_HD'):
+            return {'category_id': '34'}
+        elif raw_manual in ('7', 'TV_SD'):
+            return {'category_id': '7'}
+        elif raw_manual.isdigit() and int(raw_manual) > 0:
+            return {'category_id': raw_manual}
 
+        # 2. Automatsko određivanje THR kategorije na temelju detektiranog formata (Film vs Serija), rezolucije i medija
         cat_id = '0'
-        res = meta.get('resolution', '')
+        res = str(meta.get('resolution', ''))
         is_hd = res in ('1080p', '1080i', '720p', '2160p', '4320p')
         is_disc = meta.get('type') == 'DISC'
-        cat_upper = raw_cat.upper()
+        internal_cat = str(meta.get('category', '')).upper()
 
-        if cat_upper in ('CRTICI', 'CRTIĆI', 'ANIMATION', 'CARTOON', 'CARTOONS', '18'):
-            cat_id = '18'
-        elif cat_upper in ('DOCU', 'DOCUMENTARY', 'DOKUMENTARCI', 'DOKUMENTARNI', 'DOKU', '12'):
-            cat_id = '12'
-        elif cat_upper in ('ANIME', '31'):
-            cat_id = '31'
-        elif cat_upper in ('MOVIE_HD', '17'):
-            cat_id = '17'
-        elif cat_upper in ('MOVIE_SD', '4'):
-            cat_id = '4'
-        elif cat_upper in ('MOVIE_DVD', '14'):
-            cat_id = '14'
-        elif cat_upper in ('MOVIE_BD', '40'):
-            cat_id = '40'
-        elif cat_upper in ('TV_HD', '34'):
-            cat_id = '34'
-        elif cat_upper in ('TV_SD', '7'):
-            cat_id = '7'
-        elif cat_upper == 'MOVIE':
+        if internal_cat == 'MOVIE':
             if is_disc:
                 cat_id = '40' if is_hd else '14'
             else:
                 cat_id = '17' if is_hd else '4'
-        elif cat_upper == 'TV':
+        elif internal_cat == 'TV':
             cat_id = '34' if is_hd else '7'
 
         return {'category_id': cat_id}
