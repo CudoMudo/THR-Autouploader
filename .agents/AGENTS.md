@@ -27,3 +27,7 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
 - **v1.3.8:**
   - **Failsafe Zastavice:** Dodane ručne kvačice za 'Hrvatski titl' i 'Osobni rls' (Personal Release) u GUI.
   - **Arhitektonska Lekcija:** Svi backend (Live) sustavi već automatski parsiraju MediaInfo za hrvatske titlove. Autouploader samo prosljeđuje failsafe vrijednosti, ne duplicira tu logiku unutar sebe.
+
+- **v1.3.9:**
+  - **Kompletne Video Kategorije:** U GUI dropdown dodana puna lista video kategorija s TorrentHR-a: Crtani Filmovi (18), Dokumentarni Filmovi (12), Anime (31), Filmovi HD (17), Filmovi SD (4), Filmovi DVD (14), Filmovi BD (40), Serije HD (34), Serije SD (7).
+  - **Backend Parser & Tracker Mapiranje:** U `backend/src/args.py` uklonjena restrikcija na `-c` argument, a u `backend/src/trackers/THR.py` ugrađeno direktno mapiranje numeričkih ID-eva i precizno grananje kategorija.

@@ -36,17 +36,41 @@ class THR(UNIT3D):
         mapping_only: bool = False,
     ) -> dict[str, str]:
         _ = (category, reverse, mapping_only)
+        
+        raw_cat = str(meta.get('manual_category') or meta.get('category') or '').strip()
+        if raw_cat.isdigit() and int(raw_cat) > 0:
+            return {'category_id': raw_cat}
+
         cat_id = '0'
         res = meta.get('resolution', '')
         is_hd = res in ('1080p', '1080i', '720p', '2160p', '4320p')
         is_disc = meta.get('type') == 'DISC'
+        cat_upper = raw_cat.upper()
 
-        if meta.get('category') == 'MOVIE':
+        if cat_upper in ('CRTICI', 'CRTIĆI', 'ANIMATION', 'CARTOON', 'CARTOONS', '18'):
+            cat_id = '18'
+        elif cat_upper in ('DOCU', 'DOCUMENTARY', 'DOKUMENTARCI', 'DOKUMENTARNI', 'DOKU', '12'):
+            cat_id = '12'
+        elif cat_upper in ('ANIME', '31'):
+            cat_id = '31'
+        elif cat_upper in ('MOVIE_HD', '17'):
+            cat_id = '17'
+        elif cat_upper in ('MOVIE_SD', '4'):
+            cat_id = '4'
+        elif cat_upper in ('MOVIE_DVD', '14'):
+            cat_id = '14'
+        elif cat_upper in ('MOVIE_BD', '40'):
+            cat_id = '40'
+        elif cat_upper in ('TV_HD', '34'):
+            cat_id = '34'
+        elif cat_upper in ('TV_SD', '7'):
+            cat_id = '7'
+        elif cat_upper == 'MOVIE':
             if is_disc:
                 cat_id = '40' if is_hd else '14'
             else:
                 cat_id = '17' if is_hd else '4'
-        elif meta.get('category') == 'TV':
+        elif cat_upper == 'TV':
             cat_id = '34' if is_hd else '7'
 
         return {'category_id': cat_id}

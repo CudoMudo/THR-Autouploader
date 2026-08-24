@@ -462,8 +462,17 @@ function App() {
       <div className="upload-options">
         <select value={category} onChange={e => setCategory(e.target.value)}>
           <option value="">Kategorija (Auto)</option>
-          <option value="movie">Film</option>
-          <option value="tv">Serija</option>
+          <option value="movie">Filmovi (Auto SD/HD/BD/DVD)</option>
+          <option value="tv">Serije (Auto SD/HD)</option>
+          <option value="18">Crtani Filmovi (18)</option>
+          <option value="12">Dokumentarni Filmovi (12)</option>
+          <option value="31">Anime (31)</option>
+          <option value="17">Filmovi / HD (17)</option>
+          <option value="4">Filmovi / SD (4)</option>
+          <option value="14">Filmovi / DVD (14)</option>
+          <option value="40">Filmovi / BD (40)</option>
+          <option value="34">Serije / HD (34)</option>
+          <option value="7">Serije / SD (7)</option>
         </select>
 
         <select value={type} onChange={e => setType(e.target.value)}>

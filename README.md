@@ -60,7 +60,11 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.3.8 (Trenutna Verzija)
+### v1.3.9 (Trenutna Verzija)
+* **Feature**: Proširen odabir kategorija u GUI-ju s kompletnim video kategorijama s TorrentHR-a: Crtani Filmovi (18), Dokumentarni Filmovi (12), Anime (31), Filmovi HD (17), Filmovi SD (4), Filmovi DVD (14), Filmovi BD (40), Serije HD (34) i Serije SD (7).
+* **Feature**: Poboljšan backend argument parser (`-c` / `--category`) i tracker mapper (`THR.py`) za direktno prosljeđivanje specifičnih ID-eva i precizno grananje.
+
+### v1.3.8
 * **Feature**: Dodana ručna kvačica "Hrvatski titl" u GUI (korisno kao *failsafe* kada automatski parser ne uspije pročitati jezik iz foldera ili MediaInfoa).
 * **Feature**: Dodana ručna kvačica "Osobni rls" (Personal Release) u GUI. Obje kvačice su sada ispravno povezane s Live Tracker API-jem koji ih uredno obrađuje i ispisuje uz torrente i na IRC-u.
 
