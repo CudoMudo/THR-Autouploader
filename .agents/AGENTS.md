@@ -33,3 +33,27 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
   - **Backend Parser & Tracker Mapiranje:** U `backend/src/args.py` uklonjena restrikcija na `-c` argument, a u `backend/src/trackers/THR.py` ugrađeno direktno mapiranje numeričkih ID-eva i precizno grananje kategorija.
   - **Arhitektonska Lekcija (Interni tip vs. Tracker KatID):** Interni `meta['category']` MORA uvijek ostati `MOVIE` ili `TV` jer o tome ovise TMDb pretraga i generator punog naziva torrenta (`get_name.py`). Tracker kategorije (18, 12, 31, itd.) se mapiraju isključivo na tracker razini (`category_id`).
   - **Pravilo o "Auto" poljima:** Sva polja koja korisnik u GUI-ju ostavi na "Auto" (prazno) moraju 100% prepustiti odluku ugrađenoj automatici i MediaInfo analizi. Ručni unos služi samo kao izolirani override.
+
+- **v1.4.0:**
+  - **Batch / Queue Upload Sustav:**
+    - Ugrađen vizualni Batch Queue Manager u Tauri GUI (`App.tsx`, `App.css`).
+    - Podržan simultani unos više mapa odjednom (drag & drop i ručni unos).
+    - Status bedževi u redu čekanja: `Analiziram...`, `Spremno` (s prepoznatim nazivom i rezolucijom), `Učitavam...`, `✓ Uploadan` i `✕ Greška`.
+    - Dvostrana sinkronizacija postavki: klikom na stavku u redu, ona se učitava u formu i sve izmjene se u stvarnom vremenu spremaju za tu stavku.
+    - Sekvencijalni batch upload: `start_upload` u Rustu emitira `upload-finished` događaj s `item_id` kako bi frontend pouzdano čekao završetak svakog torrenta prije prelaska na sljedeći.
+  - **Cover Art & Slike.THR Integracija:**
+    - Nativni Rust uploader (`upload_image_to_slike`) preko `reqwest` multipart forme šalje sliku na `https://slike.torrenthr.org/api/1/upload`.
+    - U traci iznad opisa dodan gumb "🖼️ Dodaj cover sliku" + podrška za drag & drop slike u textarea.
+    - Automatsko ubacivanje `[img=350]URL[/img]` na vrh opisa i prikaz thumbnail pretpregleda.
+  - **Markdown u BBCode Konverter:**
+    - Implementiran `frontend/src/utils/bbcode.ts` koji pretvara standardni Markdown (`#`, `##`, `**bold**`, `*italic*`, `[text](url)`, `![alt](url)`, blockquotes, code blokove, liste) u TorrentHR kompatibilan BBCode.
+  - **Čisti Torrent Payload (Excludes):**
+    - U `backend/src/torrentcreate.py` implementirano isključivanje sporednih datoteka (`.nfo`, `.jpg`, `.jpeg`, `.png`, `.m3u`, `.m3u8`) iz stvaranja torrenta (osim ako je zadano `--keep-nfo`).
+  - **Glazbeni MediaInfo Fix:**
+    - U `backend/src/get_desc.py` filtrirano pojedinačno trajanje pjesme i naziv pojedinačne datoteke na vrhu MediaInfo bloka za albume s više pjesama.
+  - **Formatiranje Naziva & Codec Razmaci:**
+    - U `backend/src/trackers/THR.py` i `frontend/src/utils/formatters.ts` dodano pametno formatiranje: očuvanje tehničkih točaka (`H.264`, `H.265`, `5.1`, `7.1`, `2.0`, `v1.0`) i razmak ispred audio codeca (`DDP 5.1`, `AAC 2.0`).
+    - Prošireno mapiranje kategorija: Glazba/FLAC (29), Glazba/MP3 (3), Igre/PC (5), Aplikacije (1), E-books (25), Stripovi (30), Koncerti (11).
+  - **Tauri Build Pravilo:**
+    - Produkcijski `.exe` se MORA graditi pozivom `bun run tauri build --no-bundle` (ili `bun run tauri build`), a NE čistim `cargo build --release`, kako bi se frontend dist asseti ugradili u `.exe` preko `tauri.localhost` protokola umjesto dev servera `localhost:1420`.
+
