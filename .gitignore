@@ -1,4 +1,4 @@
-﻿# Rust / Tauri build artifacts
+# Rust / Tauri build artifacts
 frontend/src-tauri/target/
 frontend/src-tauri/Cargo.lock
 
@@ -7,6 +7,7 @@ frontend/node_modules/
 frontend/dist/
 frontend/package-lock.json
 frontend/bun.lockb
+frontend/bun.lock
 
 # Python build artifacts
 backend/__pycache__/

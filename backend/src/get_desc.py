@@ -363,6 +363,26 @@ class DescriptionBuilder:
 
                 if media_info_content:
                     media_info_content = media_info_content.replace("\r\n", "\n")
+
+                    # Music album refinement: eliminate single-track duration / filename artifacts
+                    is_music = (
+                        str(meta.get('category', '')).upper() == 'MUSIC'
+                        or any(str(f).lower().endswith(('.flac', '.mp3', '.m4a', '.wav', '.ape', '.aac')) for f in meta.get('filelist', []))
+                    )
+                    filelist = meta.get('filelist', [])
+                    if is_music and len(filelist) > 1:
+                        first_stem = os.path.splitext(os.path.basename(filelist[0]))[0]
+                        lines = media_info_content.splitlines()
+                        filtered_lines = []
+                        for line in lines:
+                            stripped = line.strip()
+                            if stripped == first_stem or (first_stem and stripped.startswith(first_stem)):
+                                continue
+                            if stripped.startswith("Duration.......:") or stripped.lower().startswith("duration :") or stripped.lower().startswith("duration:"):
+                                continue
+                            filtered_lines.append(line)
+                        media_info_content = "\n".join(filtered_lines).strip()
+
                     try:
                         await self.common.makedirs(cache_file_dir)
                         async with aiofiles.open(cache_file_path, mode="w", encoding="utf-8") as f:

@@ -1,4 +1,5 @@
 # Upload Assistant © 2025 Audionut & wastaken7 — Licensed under UAPL v1.0
+import re
 from typing import Any, Optional
 
 from src.trackers.COMMON import COMMON
@@ -37,7 +38,7 @@ class THR(UNIT3D):
     ) -> dict[str, str]:
         _ = (category, reverse, mapping_only)
         
-        # 1. Eksplicitni ručni odabir specifične kategorije (npr. Crtići 18, Dokumentarci 12, Anime 31, HD/SD ID-evi)
+        # 1. Eksplicitni ručni odabir specifične kategorije
         raw_manual = str(meta.get('manual_category') or '').strip().upper()
         if raw_manual in ('18', 'CRTICI', 'CRTIĆI', 'ANIMATION', 'CARTOON', 'CARTOONS'):
             return {'category_id': '18'}
@@ -57,10 +58,24 @@ class THR(UNIT3D):
             return {'category_id': '34'}
         elif raw_manual in ('7', 'TV_SD'):
             return {'category_id': '7'}
+        elif raw_manual in ('29', 'MUSIC_FLAC', 'FLAC'):
+            return {'category_id': '29'}
+        elif raw_manual in ('3', 'MUSIC_MP3', 'MP3', 'MUSIC'):
+            return {'category_id': '3'}
+        elif raw_manual in ('5', 'GAME', 'GAMES', 'PC_GAME'):
+            return {'category_id': '5'}
+        elif raw_manual in ('1', 'APP', 'APPS', 'APLIKACIJE'):
+            return {'category_id': '1'}
+        elif raw_manual in ('25', 'EBOOK', 'EBOOKS', 'E-BOOKS'):
+            return {'category_id': '25'}
+        elif raw_manual in ('30', 'STRIP', 'STRIPOVI', 'COMICS'):
+            return {'category_id': '30'}
+        elif raw_manual in ('11', 'CONCERT', 'KONCERTI', 'SPOTOVI'):
+            return {'category_id': '11'}
         elif raw_manual.isdigit() and int(raw_manual) > 0:
             return {'category_id': raw_manual}
 
-        # 2. Automatsko određivanje THR kategorije na temelju detektiranog formata (Film vs Serija), rezolucije i medija
+        # 2. Automatsko određivanje THR kategorije na temelju detektiranog formata, rezolucije i medija
         cat_id = '0'
         res = str(meta.get('resolution', ''))
         is_hd = res in ('1080p', '1080i', '720p', '2160p', '4320p')
@@ -74,6 +89,15 @@ class THR(UNIT3D):
                 cat_id = '17' if is_hd else '4'
         elif internal_cat == 'TV':
             cat_id = '34' if is_hd else '7'
+        elif internal_cat == 'MUSIC':
+            audio_info = str(meta.get('audio', '')).upper()
+            title_info = str(meta.get('name', '')).upper()
+            if 'FLAC' in audio_info or 'FLAC' in title_info:
+                cat_id = '29'
+            else:
+                cat_id = '3'
+        elif internal_cat == 'GAME':
+            cat_id = '5'
 
         return {'category_id': cat_id}
 
@@ -138,7 +162,38 @@ class THR(UNIT3D):
 
         return data
 
+    @staticmethod
+    def format_thr_name(name: str) -> str:
+        if not name:
+            return ""
+        # 1. Spacing before audio codecs & channels (e.g. DDP5.1 -> DDP 5.1, AAC2.0 -> AAC 2.0, DDP.5.1 -> DDP 5.1)
+        s = re.sub(
+            r'\b(DDP|DD\+|DD|AAC|AC3|EAC3|DTS(?:-HD(?: MA)?)?|TrueHD|FLAC|LPCM)[.\-_]?([1-9]\.[0-2])\b',
+            r'\1 \2',
+            name,
+            flags=re.IGNORECASE
+        )
+        
+        # 2. Protect special tokens with dots:
+        # H.264 / H.265 / x.264 / x.265
+        s = re.sub(r'\b([HhXx])\.(26[45])\b', r'\1@@DOT@@\2', s)
+        # Audio channel counts (e.g. 5.1, 7.1, 2.0, 1.0, 2.1, 6.1)
+        s = re.sub(r'\b(\d)\.(\d)\b', r'\1@@DOT@@\2', s)
+        # Version strings (e.g. v1.0, v2.1)
+        s = re.sub(r'\b(v\d+)\.(\d+)\b', r'\1@@DOT@@\2', s, flags=re.IGNORECASE)
+        
+        # 3. Replace remaining dots with spaces
+        s = s.replace('.', ' ')
+        
+        # 4. Restore protected dots
+        s = s.replace('@@DOT@@', '.')
+        
+        # 5. Clean up multiple spaces
+        return re.sub(r'\s+', ' ', s).strip()
+
     # If the tracker has specific naming conventions, add them here; otherwise, remove this function
     async def get_name(self, meta: Meta) -> dict[str, str]:
-        UNIT3D_TEMPLATE_name = meta['name']
-        return {'name': UNIT3D_TEMPLATE_name}
+        raw_name = meta.get('manual_name') or meta.get('name') or ''
+        formatted_name = self.format_thr_name(str(raw_name))
+        return {'name': formatted_name}
+

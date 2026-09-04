@@ -157,6 +157,7 @@ fn load_settings() -> Result<GuiSettings, String> {
 
 #[derive(Deserialize, Debug)]
 pub struct UploadPayload {
+    item_id: Option<String>,
     thr_api_key: String,
     tmdb_api_key: String,
     slike_api_key: String,
@@ -184,15 +185,87 @@ pub struct UploadPayload {
     is_dry_run: bool,
     hrvatski_titl: bool,
     personal_release: bool,
+    custom_description: Option<String>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct UploadFinishedPayload {
+    item_id: Option<String>,
+    success: bool,
+    message: String,
+}
+
+fn prepare_python_command(backend_dir: &std::path::Path, args: &[String]) -> Command {
+    let exe_path = backend_dir.join("dist").join("upload").join("upload.exe");
+    let mut cmd;
+    if exe_path.exists() {
+        cmd = Command::new(exe_path);
+        cmd.args(args);
+    } else {
+        cmd = Command::new("python");
+        let script_path = backend_dir.join("upload.py");
+        cmd.arg(script_path);
+        cmd.args(args);
+    }
+    cmd.current_dir(backend_dir);
+    cmd
+}
+
+#[tauri::command]
+async fn upload_image_to_slike(
+    api_key: String,
+    base64_data: String,
+    _filename: Option<String>,
+) -> Result<String, String> {
+    if api_key.trim().is_empty() {
+        return Err("Slike.THR API ključ nije unesen. Provjerite postavke (⚙️).".to_string());
+    }
+
+    // Očisti base64 prefix ako je data URL (npr. data:image/png;base64,...)
+    let clean_b64 = if let Some(idx) = base64_data.find(";base64,") {
+        &base64_data[idx + 8..]
+    } else {
+        &base64_data
+    };
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(60))
+        .build()
+        .map_err(|e| format!("Greška pri stvaranju HTTP klijenta: {}", e))?;
+
+    let form = reqwest::multipart::Form::new()
+        .text("key", api_key.trim().to_string())
+        .text("format", "json".to_string())
+        .text("source", clean_b64.trim().to_string());
+
+    let res = client
+        .post("https://slike.torrenthr.org/api/1/upload")
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|e| format!("Greška pri slanju na Slike.THR: {}", e))?;
+
+    let status = res.status();
+    let text = res.text().await.map_err(|e| format!("Greška pri čitanju odgovora: {}", e))?;
+
+    if !status.is_success() {
+        return Err(format!("Slike.THR greška (HTTP {}): {}", status.as_u16(), text));
+    }
+
+    let json: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| format!("Neispravan JSON odgovor od Slike.THR: {}", e))?;
+
+    if let Some(url) = json.pointer("/image/url").and_then(|v| v.as_str()) {
+        Ok(url.to_string())
+    } else if let Some(err_msg) = json.pointer("/error/message").and_then(|v| v.as_str()) {
+        Err(format!("Slike.THR API javlja: {}", err_msg))
+    } else {
+        Err(format!("Slike.THR neočekivan odgovor: {}", text))
+    }
 }
 
 #[tauri::command]
 async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), String> {
-    // 1. We will use environment variables to pass the API keys and settings to python without modifying config.py
-    // Wait, Python upload.py doesn't read environment variables for these by default!
-    // But we can append a quick override script to the end of config.py, OR write a generic override file.
-    // For now, let's just launch the python script and pass the folder path.
-    
     let mut args = vec![
         payload.folder_path.clone(),
         "-tk".to_string(),
@@ -269,18 +342,31 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         args.push("-sat".to_string()); // Force hashing, skip searching client for existing torrent
         args.push("-rh".to_string()); // Force rehash to ignore old tmp/BASE.torrent
     }
-    
-    // We will use --debug for safe testing initially
-    // args.push("--debug".to_string());
-    
-    // Fix for OS error 267: hardcode the absolute path to the backend for this machine
+
     let backend_dir = get_backend_dir();
+
+    // Custom description file passing
+    if let Some(desc) = &payload.custom_description {
+        let trimmed = desc.trim();
+        if !trimmed.is_empty() {
+            let tmp_dir = backend_dir.join("tmp");
+            let _ = std::fs::create_dir_all(&tmp_dir);
+            let ts = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis();
+            let desc_file = tmp_dir.join(format!("custom_desc_{}.txt", ts));
+            if std::fs::write(&desc_file, trimmed).is_ok() {
+                args.push("-df".to_string());
+                args.push(desc_file.to_string_lossy().to_string());
+            }
+        }
+    }
 
     // Inject API keys into config.py
     let config_path = backend_dir.join("data").join("config.py");
     let template_path = backend_dir.join("data").join("templates").join("config.py");
 
-    // Copy from template if it doesn't exist
     if !config_path.exists() {
         let _ = std::fs::copy(&template_path, &config_path);
     }
@@ -343,15 +429,11 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         let _ = std::fs::write(&config_path, config_content);
     }
 
-    // Spawn Python process
     #[cfg(target_os = "windows")]
     use std::os::windows::process::CommandExt;
 
-    let python_path = backend_dir.join("dist").join("upload").join("upload.exe");
-    let mut cmd = Command::new(python_path);
-    cmd.current_dir(backend_dir)
-        .args(&args)
-        .env("PYTHONIOENCODING", "utf8")
+    let mut cmd = prepare_python_command(&backend_dir, &args);
+    cmd.env("PYTHONIOENCODING", "utf8")
         .env("PYTHONUTF8", "1")
         .env("SLIKETHR_API_KEY", &payload.slike_api_key)
         .env("THR_API_KEY", &payload.thr_api_key)
@@ -392,13 +474,18 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         }
     });
 
+    let app_finished = app.clone();
+    let item_id = payload.item_id.clone();
     std::thread::spawn(move || {
         let status = child.wait().unwrap();
-        if status.success() {
-            let _ = app.emit("upload-log", format!("[SISTEM] Uspjeh! Torrent je uspješno uploadan."));
+        let (success, msg) = if status.success() {
+            let _ = app_finished.emit("upload-log", "[SISTEM] Uspjeh! Torrent je uspješno uploadan.".to_string());
+            (true, "Torrent je uspješno uploadan.".to_string())
         } else {
-            let _ = app.emit("upload-log", format!("[SISTEM] Greška! Proces je prekinut sa statusom: {}", status));
-        }
+            let _ = app_finished.emit("upload-log", format!("[SISTEM] Greška! Proces je prekinut sa statusom: {}", status));
+            (false, format!("Proces je prekinut sa statusom: {}", status))
+        };
+        let _ = app_finished.emit("upload-finished", UploadFinishedPayload { item_id, success, message: msg });
     });
 
     Ok(())
@@ -412,7 +499,7 @@ async fn dry_run_upload(
     slike_api_key: String,
     thr_api_key: String
 ) -> Result<String, String> {
-    let mut args = vec![
+    let args = vec![
         folder_path.clone(),
         "--meta-only".to_string(),
     ];
@@ -445,11 +532,8 @@ async fn dry_run_upload(
     #[cfg(target_os = "windows")]
     use std::os::windows::process::CommandExt;
 
-    let python_path = backend_dir.join("dist").join("upload").join("upload.exe");
-    let mut cmd = Command::new(python_path);
-    cmd.current_dir(backend_dir)
-        .args(&args)
-        .env("PYTHONIOENCODING", "utf8")
+    let mut cmd = prepare_python_command(&backend_dir, &args);
+    cmd.env("PYTHONIOENCODING", "utf8")
         .env("PYTHONUTF8", "1")
         .env("SLIKETHR_API_KEY", &slike_api_key)
         .env("THR_API_KEY", &thr_api_key)
@@ -488,6 +572,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             start_upload, 
             dry_run_upload,
+            upload_image_to_slike,
             save_settings,
             load_settings,
             load_existing_config

@@ -169,7 +169,9 @@ class TorrentCreator:
 
     @staticmethod
     def build_mkbrr_exclude_string(root_folder: str, filelist: Sequence[str]) -> str:
-        exclude_patterns = ["*.nfo", "*.jpg", "*.png", "*.xml", "*sample.mkv", "!sample*.*"]
+        exclude_patterns = [
+            "*.nfo", "*.jpg", "*.jpeg", "*.png", "*.m3u", "*.m3u8", "*.xml", "*sample.mkv", "!sample*.*"
+        ]
         keep_patterns = ["*.srt", "*.sub", "*.idx", "*.vtt", "*.ass", "*.ssa", "*.txt"]
         keep_set = {os.path.abspath(f) for f in filelist}
 
@@ -275,6 +277,14 @@ class TorrentCreator:
                 else:
                     exclude = ["*sample.mkv", "!sample*.*"] if not meta['is_disc'] else []
                     include = ["*.mkv", "*.mp4", "*.ts", "*.srt", "*.sub", "*.idx", "*.vtt", "*.ass", "*.ssa", "*.txt"] if not meta['is_disc'] else []
+
+                # Non-media files filtering for clean torrent payload (.nfo, .jpg, .jpeg, .png, .m3u, .m3u8)
+                clean_metadata_excludes = ["*.jpg", "*.jpeg", "*.png", "*.m3u", "*.m3u8", "*/*.jpg", "*/*.jpeg", "*/*.png", "*/*.m3u", "*/*.m3u8"]
+                if not meta.get('keep_nfo', False):
+                    clean_metadata_excludes.extend(["*.nfo", "*/*.nfo"])
+                for pat in clean_metadata_excludes:
+                    if pat not in exclude and "*" not in exclude:
+                        exclude.append(pat)
 
                 # If using mkbrr, run the external application
                 if meta.get('mkbrr'):
