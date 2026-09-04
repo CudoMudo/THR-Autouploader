@@ -60,7 +60,15 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.3.9 (Trenutna Verzija)
+### v1.4.0 (Trenutna Verzija)
+* **Feature - Batch / Queue Upload:** Podrška za višestruki drag & drop unos mapa, vizualni panel reda čekanja (Queue), dvostrana sinkronizacija postavki po stavci i sekvencijalni batch upload.
+* **Feature - Cover Art & Slike.THR:** Gumb za direktni upload slika na Slike.THR i ubacivanje BBCode oznake `[img=350]` s thumbnail pretpregledom.
+* **Feature - Markdown u BBCode:** Alatna traka za automatsku konverziju Markdown zapisa u BBCode format prilagođen TorrentHR-u.
+* **Feature - Pametno Formatiranje Naziva:** Očuvanje tehničkih točaka (`H.264`, `H.265`, `5.1`, `7.1`, `2.0`, `v1.0`) i automatsko dodavanje razmaka ispred audio codeca (`DDP 5.1`, `AAC 2.0`).
+* **Feature - Čisti Torrenti:** Automatsko isključivanje sporednih datoteka (`.nfo`, `.jpg`, `.jpeg`, `.png`, `.m3u`, `.m3u8`) iz kreiranja torrent datoteka.
+* **Feature - Glazbeni MediaInfo Fix:** Uklonjeni artefakti pojedinačnog trajanja pjesme i imena pojedinačne datoteke iz opisa glazbenih albuma.
+
+### v1.3.9
 * **Feature**: Proširen odabir kategorija u GUI-ju s kompletnim video kategorijama s TorrentHR-a: Crtani Filmovi (18), Dokumentarni Filmovi (12), Anime (31), Filmovi HD (17), Filmovi SD (4), Filmovi DVD (14), Filmovi BD (40), Serije HD (34) i Serije SD (7).
 * **Feature**: Poboljšan backend argument parser (`-c` / `--category`) i tracker mapper (`THR.py`) za direktno prosljeđivanje specifičnih ID-eva i precizno grananje.
 
