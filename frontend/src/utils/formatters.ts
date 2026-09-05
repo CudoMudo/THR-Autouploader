@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Release title formatting and intelligent folder metadata parsing.
  */
 
@@ -82,6 +82,12 @@ export function parseFolderMetadata(folderPath: string): ParsedFolderInfo {
   // Year detection
   const yearMatch = cleanTitle.match(/\b(19\d{2}|20\d{2})\b/);
   const year = yearMatch ? yearMatch[1] : undefined;
+
+  // Music overrides: FLAC / MP3 on UNIT3D have no resolution and use other type
+  if (category === "29" || category === "3") {
+    type = "other";
+    resolution = "other";
+  }
 
   return {
     cleanTitle,

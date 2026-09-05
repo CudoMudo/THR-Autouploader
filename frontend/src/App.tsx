@@ -203,16 +203,31 @@ function App() {
       else if (meta.igdb_id && meta.igdb_id !== 0) detectedId = meta.igdb_id.toString();
       else if (meta.discogs_id && meta.discogs_id !== 0) detectedId = meta.discogs_id.toString();
 
+      const isMusic = recognizedCat === "music" || recognizedCat === "29" || recognizedCat === "3" || item.category === "29" || item.category === "3";
+      const finalCat = isMusic ? (item.category === "3" ? "3" : "29") : (recognizedCat || item.category);
+      const finalRes = isMusic ? "other" : (recognizedRes || item.resolution);
+      const finalType = isMusic ? "other" : (recognizedType || item.type);
+
+      let badgeText = "Spremno";
+      if (recognizedTitle) {
+        if (isMusic) {
+          badgeText = `${recognizedTitle} (${finalCat === "3" ? "MP3" : "FLAC"})`;
+        } else {
+          badgeText = `${recognizedTitle} (${finalRes || "HD"})`;
+        }
+      }
+
       updateQueueItem(item.id, (it) => ({
         ...it,
         status: "ready",
-        statusBadgeText: recognizedTitle ? `${recognizedTitle} (${recognizedRes || "HD"})` : "Spremno",
+        statusBadgeText: badgeText,
         validationData: meta,
         apiId: detectedId,
-        category: recognizedCat || it.category,
-        type: recognizedType || it.type,
-        resolution: recognizedRes || it.resolution,
+        category: finalCat,
+        type: finalType,
+        resolution: finalRes,
         cleanTitle: it.cleanTitle || recognizedTitle,
+        coverUrl: it.coverUrl || meta.cover_url,
       }));
 
       setLogs((prev) => [
@@ -247,6 +262,7 @@ function App() {
 
       const parsed = parseFolderMetadata(normalizedPath);
       const cleanTitle = formatCleanTitle(folderName);
+      const isMusic = parsed.category === "29" || parsed.category === "3";
 
       const newItem: QueueItem = {
         id: "item_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
@@ -254,8 +270,8 @@ function App() {
         folderName: folderName,
         cleanTitle: cleanTitle,
         category: parsed.category || "movie",
-        type: parsed.type || "webdl",
-        resolution: parsed.resolution || "1080p",
+        type: isMusic ? "other" : (parsed.type || "webdl"),
+        resolution: isMusic ? "other" : (parsed.resolution || "1080p"),
         apiId: "",
         customDescription: "",
         hrvatskiTitl: false,
@@ -955,7 +971,12 @@ function App() {
               value={selectedItem.category}
               onChange={(e) => {
                 const val = e.target.value;
-                updateQueueItem(selectedItem.id, (it) => ({ ...it, category: val }));
+                const isMusic = val === "29" || val === "3" || val === "music";
+                updateQueueItem(selectedItem.id, (it) => ({
+                  ...it,
+                  category: val,
+                  ...(isMusic ? { type: "other", resolution: "other" } : {}),
+                }));
               }}
               className="selector-select"
             >
@@ -1029,7 +1050,13 @@ function App() {
                 const val = e.target.value;
                 updateQueueItem(selectedItem.id, (it) => ({ ...it, apiId: val }));
               }}
-              placeholder="API ID (IMDb / TMDb / Discogs) - Opcionalno"
+              placeholder={
+                selectedItem.category === "29" || selectedItem.category === "3" || selectedItem.category === "music"
+                  ? "Discogs ID ili link (npr. 33441884 ili https://www.discogs.com/release/...)"
+                  : selectedItem.category === "5" || selectedItem.category === "game"
+                  ? "IGDB ID ili link - Opcionalno"
+                  : "API ID (TMDb / IMDb) - Opcionalno"
+              }
               className="api-id-input"
             />
           </div>
@@ -1041,8 +1068,10 @@ function App() {
                 ✓ Prepoznato: {selectedItem.validationData.title}
               </h4>
               <p className="recognized-sub">
-                Kategorija: {selectedItem.category.toUpperCase()} | Rezolucija:{" "}
-                {selectedItem.resolution}
+                {selectedItem.category === "29" || selectedItem.category === "3"
+                  ? `Kategorija: ${selectedItem.category === "3" ? "GLAZBA (MP3)" : "GLAZBA (FLAC)"} | Baza: Discogs (${selectedItem.apiId || "Auto"})`
+                  : `Kategorija: ${selectedItem.category.toUpperCase()} | Rezolucija: ${selectedItem.resolution}`
+                }
               </p>
             </div>
           )}

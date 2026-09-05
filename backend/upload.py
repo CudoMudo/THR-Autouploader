@@ -477,7 +477,8 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
         console.print(f"[bold red]Upload otkazan zbog greške u datoteci:[/bold red] {e}")
         if meta.get('debug', False):
             console.print(traceback.format_exc())
-        return
+        meta['we_are_uploading'] = False
+        sys.exit(1)
 
     if meta.get('meta_only', False):
         safe_meta = {}
@@ -869,31 +870,35 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                             raise Exception(f"Error during screenshot capture: {e}") from e
 
                     else:
-                        try:
-                            if meta['debug']:
-                                console.print(f"videopath: {videopath}, filename: {filename}, meta: {meta['uuid']}, base_dir: {base_dir}, manual_frames: {manual_frames}")
+                        is_music_upload = str(meta.get('category', '')).upper() == 'MUSIC' or any(
+                            str(f).lower().endswith(('.flac', '.mp3', '.m4a', '.wav', '.ape', '.aac', '.ogg'))
+                            for f in meta.get('filelist', [])
+                        )
+                        if not is_music_upload:
+                            try:
+                                if meta['debug']:
+                                    console.print(f"videopath: {videopath}, filename: {filename}, meta: {meta['uuid']}, base_dir: {base_dir}, manual_frames: {manual_frames}")
 
-                            await takescreens_manager.screenshots(
-                                videopath, filename, meta['uuid'], base_dir, meta,
-                                manual_frames=manual_frames  # Pass additional kwargs directly
-                            )
-                        except asyncio.CancelledError as e:
-                            await cleanup_screenshot_temp_files(meta)
-                            await asyncio.sleep(0.1)
-                            await cleanup_manager.cleanup()
-                            gc.collect()
-                            cleanup_manager.reset_terminal()
-                            raise Exception("Error during screenshot capture") from e
-                        except Exception as e:
-                            console.print(traceback.format_exc())
-                            await cleanup_screenshot_temp_files(meta)
-                            await asyncio.sleep(0.1)
-                            await cleanup_manager.cleanup()
-                            gc.collect()
-                            cleanup_manager.reset_terminal()
-                            if "workers" in str(e):
-                                console.print("[red]max workers issue, see https://github.com/Audionut/Upload-Assistant/wiki/ffmpeg---max-workers-issues[/red]")
-                            raise Exception(f"Error during screenshot capture: {e}") from e
+                                await takescreens_manager.screenshots(
+                                    videopath, filename, meta['uuid'], base_dir, meta,
+                                    manual_frames=manual_frames  # Pass additional kwargs directly
+                                )
+                            except asyncio.CancelledError as e:
+                                await cleanup_screenshot_temp_files(meta)
+                                await asyncio.sleep(0.1)
+                                await cleanup_manager.cleanup()
+                                gc.collect()
+                                cleanup_manager.reset_terminal()
+                                raise Exception("Error during screenshot capture") from e
+                            except Exception as e:
+                                await cleanup_screenshot_temp_files(meta)
+                                await asyncio.sleep(0.1)
+                                await cleanup_manager.cleanup()
+                                gc.collect()
+                                cleanup_manager.reset_terminal()
+                                if "workers" in str(e):
+                                    console.print("[red]max workers issue, see https://github.com/Audionut/Upload-Assistant/wiki/ffmpeg---max-workers-issues[/red]")
+                                raise Exception(f"Error during screenshot capture: {e}") from e
 
                 except asyncio.CancelledError as e:
                     await cleanup_screenshot_temp_files(meta)
@@ -1663,6 +1668,8 @@ async def do_the_thing(base_dir: str) -> None:
                 if not meta.get('site_check', False):
                     if not meta.get('emby', False):
                         console.print("we are not uploading.......")
+                        if not meta.get('debug', False) and not meta.get('meta_only', False):
+                            sys.exit(1)
             # return
                     if 'queue' in meta and meta.get('queue') is not None:
                         processed_files_count += 1

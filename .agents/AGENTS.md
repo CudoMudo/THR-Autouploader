@@ -57,3 +57,20 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
   - **Tauri Build Pravilo:**
     - Produkcijski `.exe` se MORA graditi pozivom `bun run tauri build --no-bundle` (ili `bun run tauri build`), a NE čistim `cargo build --release`, kako bi se frontend dist asseti ugradili u `.exe` preko `tauri.localhost` protokola umjesto dev servera `localhost:1420`.
 
+- **v1.4.1:**
+  - **Glazba & Discogs Integracija (`backend/src/discogs.py`, `backend/src/prep.py`):**
+    - Iz naziva foldera (npr. `VA - Afterhours, Vol. 1 (2022) [Future Avenue - FA022LP] [WEB - FLAC]`) parsira izvođača, naslov, godinu, kataloški broj i izdavača.
+    - Šalje upit na javni Discogs API (s pretragom po kataloškom broju i/ili izvođaču/albumu) i dohvaća Release ID i cover sliku visoke rezolucije.
+    - Podržan je i ručni unos Discogs ID-a ili punog URL-a (`https://www.discogs.com/release/...`).
+    - UNIT3D tracker šalje `discogs` parametar umjesto TMDb/IMDb polja.
+  - **Usklađivanje Tipa i Rezolucije za Glazbu:**
+    - Za kategorije 29 (FLAC) i 3 (MP3), rezolucija i tip se u UI-ju i backendu automatski postavljaju na `other` (*Ostalo (Other)*).
+    - Rust backend (`lib.rs`) preskače prosljeđivanje argumenta `-res` za glazbu jer UNIT3D nema video rezoluciju za glazbenu kategoriju.
+  - **Eliminacija `exit is not defined` & Pouzdan Status:**
+    - Zamijenjen nepostojeći `exit()` sa `sys.exit(1)` u `backend/src/video.py`.
+    - `get_video` kod audio foldera sigurno vraća praznu listu umjesto rušenja.
+    - Zaobiđeno je okidanje screenshotova (`takescreens_manager`) za glazbene kategorije.
+    - Na grešci backend završava s exit kodom `1`, pa Tauri točno registrira neuspjeh i ne prikazuje lažnu poruku o uspjehu.
+  - **Glazbene Datoteke u Torrentu (`backend/src/torrentcreate.py`):**
+    - Uključene sve audio ekstenzije (`.flac`, `.mp3`, `.wav`, `.m4a`, `.ape`, `.cue`, `.log`, `.m3u`, itd.) te popratne slike (cover art) u torrent payloadu.
+

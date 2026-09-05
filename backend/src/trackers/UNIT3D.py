@@ -339,6 +339,12 @@ class UNIT3D:
     async def get_igdb(self, meta: dict[str, Any]) -> dict[str, str]:
         return {"igdb": str(meta.get('igdb_manual', '0'))}
 
+    async def get_discogs(self, meta: dict[str, Any]) -> dict[str, str]:
+        discogs = meta.get('discogs_id') or meta.get('discogs_manual') or 0
+        if discogs:
+            return {"discogs": str(discogs)}
+        return {}
+
     async def get_stream(self, meta: dict[str, Any]) -> dict[str, str]:
         return {"stream": f"{meta['stream']}"}
 
@@ -405,6 +411,7 @@ class UNIT3D:
             self.get_tvdb(meta),
             self.get_mal(meta),
             self.get_igdb(meta),
+            self.get_discogs(meta),
             self.get_anonymous(meta),
             self.get_stream(meta),
             self.get_sd(meta),

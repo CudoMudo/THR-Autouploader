@@ -207,9 +207,8 @@ class VideoManager:
             try:
                 video = sorted(filelist, key=os.path.getsize, reverse=True)[0] if sorted_filelist else sorted(filelist)[0]
             except IndexError:
-                console.print("[bold red]No Video files found")
-                if mode == 'cli':
-                    exit()
+                if debug:
+                    console.print("[yellow]No Video files found[/yellow]")
                 return "", []
         else:
             video = videoloc

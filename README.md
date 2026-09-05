@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.3.5_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.4.1_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,15 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.0 (Trenutna Verzija)
+### v1.4.1 (Trenutna Verzija)
+* **Feature - Discogs Integracija za Glazbu:** Novi modul `backend/src/discogs.py` automatski prepoznaje glazbena izdanja (izvođač, album, godina, izdavač, kataloški broj) iz naziva foldera i pretražuje javni Discogs API. Podržan je i ručni unos Discogs ID-a ili punog URL-a u sučelju.
+* **Feature - Preuzimanje Cover Arta za Glazbu:** Automatsko preuzimanje i prikaz cover slike s Discogsa visoke rezolucije unutar forme i generiranih metapodataka.
+* **Fix - Glazba Tip i Rezolucija:** Automatsko postavljanje tipa i rezolucije na *Ostalo (Other)* za kategorije Glazba / FLAC (29) i Glazba / MP3 (3), bez prosljeđivanja nevažećih video rezolucija na UNIT3D tracker.
+* **Fix - Otklanjanje `name 'exit' is not defined`:** Uklonjen fatalan poziv `exit()` u video skripti koji je rušio obradu audio foldera.
+* **Fix - Pouzdana Detekcija Grešaka & Status:** Backend skripta sada signalizira neuspjeh s exit kodom `1`, sprječavajući lažne "Uspjeh! Torrent je uspješno uploadan" poruke kada se dogodi pogreška.
+* **Fix - Glazbene Datoteke u Torrentu:** Osigurano uključivanje svih glazbenih formata (.flac, .mp3, .wav, .m4a, .ape, .cue, .log) i popratnih slika unutar kreiranog torrenta.
+
+### v1.4.0
 * **Feature - Batch / Queue Upload:** Podrška za višestruki drag & drop unos mapa, vizualni panel reda čekanja (Queue), dvostrana sinkronizacija postavki po stavci i sekvencijalni batch upload.
 * **Feature - Cover Art & Slike.THR:** Gumb za direktni upload slika na Slike.THR i ubacivanje BBCode oznake `[img=350]` s thumbnail pretpregledom.
 * **Feature - Markdown u BBCode:** Alatna traka za automatsku konverziju Markdown zapisa u BBCode format prilagođen TorrentHR-u.

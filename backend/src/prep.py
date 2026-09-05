@@ -43,6 +43,7 @@ try:
     from src.tvdb import tvdb_data
     from src.tvmaze import tvmaze_manager
     from src.video import video_manager
+    from src.discogs import parse_music_folder_name, search_discogs_metadata
 
     guessit_module: Any = cast(Any, guessit)
     GuessitFn = Callable[[str, Optional[dict[str, Any]]], dict[str, Any]]
@@ -314,83 +315,177 @@ class Prep:
             meta['sd'] = await video_manager.is_sd(meta['resolution'])
 
         else:
-            videopath, meta['filelist'] = await video_manager.get_video(videoloc, meta.get('mode', 'discord'), meta.get('sorted_filelist', False), meta.get('debug', False))
-            filelist = cast(list[str], meta.get('filelist') or [])
-            meta['filelist'] = filelist
-            search_term = os.path.basename(filelist[0]) if filelist else ""
-            search_file_folder = 'file'
+            raw_manual_cat = str(meta.get('manual_category') or '').strip().upper()
+            is_music_cat = raw_manual_cat in ('29', '3', 'MUSIC', 'GLAZBA', 'MUSIC_FLAC', 'MUSIC_MP3', 'FLAC', 'MP3')
+            audio_exts = {'.flac', '.mp3', '.wav', '.m4a', '.ape', '.alac', '.aac', '.ogg'}
+            video_exts = {'.mkv', '.mp4', '.avi', '.ts', '.m2ts', '.wmv', '.vob'}
 
-            video, meta['scene'], meta['imdb_id'] = await self.scene_manager.is_scene(videopath, meta, meta.get('imdb_id', 0))
+            is_audio_only = False
+            audio_files_found: list[str] = []
+            if os.path.isdir(videoloc):
+                v_count = 0
+                for root, _, files in os.walk(videoloc):
+                    for f in files:
+                        ext = os.path.splitext(f)[1].lower()
+                        full_p = os.path.abspath(os.path.join(root, f))
+                        if ext in audio_exts:
+                            audio_files_found.append(full_p)
+                        elif ext in video_exts:
+                            v_count += 1
+                if (audio_files_found and v_count == 0) or (is_music_cat and audio_files_found):
+                    is_audio_only = True
+            elif os.path.isfile(videoloc):
+                ext = os.path.splitext(videoloc)[1].lower()
+                if ext in audio_exts or is_music_cat:
+                    audio_files_found.append(videoloc)
+                    is_audio_only = True
 
-            try:
-                title, secondary_title, extracted_year = await self.name_manager.extract_title_and_year(meta, video)
-                if meta['debug']:
-                    console.print(f"Title: {title}, Secondary Title: {secondary_title}, Year: {extracted_year}")
-                if secondary_title:
-                    meta['secondary_title'] = secondary_title
-                if extracted_year and not meta.get('year'):
-                    meta['year'] = extracted_year
+            if is_audio_only or is_music_cat:
+                meta['category'] = 'MUSIC'
+                meta['resolution'] = 'other'
+                meta['sd'] = 0
+                meta['hfr'] = False
 
-                if meta.get('isdir', False):
-                    guess_name = os.path.basename(meta['path']).replace("_", "").replace("-", "") if meta['path'] else ""
+                if any(f.lower().endswith('.flac') for f in audio_files_found) or raw_manual_cat == '29' or 'FLAC' in videoloc.upper():
+                    meta['audio'] = 'FLAC'
                 else:
-                    guess_name = ntpath.basename(video).replace('-', ' ')
-            except Exception as e:
-                console.print(f"[red]Error extracting title and year: {e}[/red]")
-                raise Exception(f"Error extracting title and year: {e}") from e
+                    meta['audio'] = 'MP3'
 
-            try:
-                if title:
-                    filename = title
-                    meta['regex_title'] = title
-                    meta['regex_secondary_title'] = secondary_title
-                    meta['regex_year'] = extracted_year
+                if os.path.isdir(videoloc):
+                    meta['filelist'] = sorted([os.path.abspath(os.path.join(root, f)) for root, _, files in os.walk(videoloc) for f in files])
                 else:
-                    try:
-                        filename = str(guessit_fn(re.sub(r"[^0-9a-zA-Z\[\\]]+", " ", guess_name), {"excludes": ["country", "language"]}).get(
-                            "title",
-                            str(guessit_fn(re.sub("[^0-9a-zA-Z]+", " ", guess_name), {"excludes": ["country", "language"]}).get("title", ""))
-                        ))
-                    except Exception:
+                    meta['filelist'] = [videoloc]
+
+                filelist = cast(list[str], meta.get('filelist') or [])
+                audio_files_found.sort()
+                primary_audio = audio_files_found[0] if audio_files_found else (filelist[0] if filelist else videoloc)
+                videopath = primary_audio
+                video = primary_audio
+
+                folder_name = os.path.basename(meta['path']) if meta.get('isdir') else os.path.splitext(os.path.basename(meta['path']))[0]
+                parsed_music = parse_music_folder_name(folder_name)
+
+                meta['title'] = parsed_music.get('title') or folder_name
+                filename = meta['title']
+                untouched_filename = folder_name
+                search_term = folder_name
+                search_file_folder = 'folder' if meta.get('isdir') else 'file'
+
+                if parsed_music.get('year'):
+                    meta['year'] = parsed_music['year']
+                    meta['search_year'] = parsed_music['year']
+
+                meta['scene'] = False
+
+                try:
+                    if not meta.get('edit', False):
+                        mi = await exportInfo(videopath, meta['isdir'], meta['uuid'], base_dir, is_dvd=False, debug=meta.get('debug', False))
+                        meta['mediainfo'] = mi
+                    else:
+                        mi = meta['mediainfo']
+                except Exception as e:
+                    if meta.get('debug'):
+                        console.print(f"[yellow]MediaInfo error for music: {e}[/yellow]")
+
+                if meta.get('manual_type'):
+                    meta['type'] = meta.get('manual_type').lower()
+                else:
+                    meta['type'] = 'other'
+
+                discogs_manual = meta.get('discogs_manual') or meta.get('discogs_id')
+                discogs_data = await search_discogs_metadata(folder_name, discogs_manual=discogs_manual, debug=meta.get('debug', False))
+                if discogs_data:
+                    meta['discogs_id'] = discogs_data.get('discogs_id', 0)
+                    if discogs_data.get('title'):
+                        meta['title'] = discogs_data['title']
+                        filename = meta['title']
+                    if discogs_data.get('year') and not meta.get('year'):
+                        meta['year'] = discogs_data['year']
+                        meta['search_year'] = discogs_data['year']
+                    if discogs_data.get('cover_url'):
+                        meta['cover_url'] = discogs_data['cover_url']
+                        meta['poster'] = discogs_data['cover_url']
+                    if discogs_data.get('genres'):
+                        meta['genres'] = ', '.join(discogs_data['genres'])
+
+            else:
+                videopath, meta['filelist'] = await video_manager.get_video(videoloc, meta.get('mode', 'discord'), meta.get('sorted_filelist', False), meta.get('debug', False))
+                filelist = cast(list[str], meta.get('filelist') or [])
+                meta['filelist'] = filelist
+                search_term = os.path.basename(filelist[0]) if filelist else ""
+                search_file_folder = 'file'
+
+                video, meta['scene'], meta['imdb_id'] = await self.scene_manager.is_scene(videopath, meta, meta.get('imdb_id', 0))
+
+                try:
+                    title, secondary_title, extracted_year = await self.name_manager.extract_title_and_year(meta, video)
+                    if meta['debug']:
+                        console.print(f"Title: {title}, Secondary Title: {secondary_title}, Year: {extracted_year}")
+                    if secondary_title:
+                        meta['secondary_title'] = secondary_title
+                    if extracted_year and not meta.get('year'):
+                        meta['year'] = extracted_year
+
+                    if meta.get('isdir', False):
+                        guess_name = os.path.basename(meta['path']).replace("_", "").replace("-", "") if meta['path'] else ""
+                    else:
+                        guess_name = ntpath.basename(video).replace('-', ' ')
+                except Exception as e:
+                    console.print(f"[red]Error extracting title and year: {e}[/red]")
+                    raise Exception(f"Error extracting title and year: {e}") from e
+
+                try:
+                    if title:
+                        filename = title
+                        meta['regex_title'] = title
+                        meta['regex_secondary_title'] = secondary_title
+                        meta['regex_year'] = extracted_year
+                    else:
                         try:
-                            guess_name = ntpath.basename(video).replace('-', ' ')
                             filename = str(guessit_fn(re.sub(r"[^0-9a-zA-Z\[\\]]+", " ", guess_name), {"excludes": ["country", "language"]}).get(
                                 "title",
                                 str(guessit_fn(re.sub("[^0-9a-zA-Z]+", " ", guess_name), {"excludes": ["country", "language"]}).get("title", ""))
                             ))
-                        except Exception as e:
-                            console.print(f"[red]Error extracting title from video name: {e}[/red]")
-                            raise Exception(f"Error extracting title from video name: {e}") from e
+                        except Exception:
+                            try:
+                                guess_name = ntpath.basename(video).replace('-', ' ')
+                                filename = str(guessit_fn(re.sub(r"[^0-9a-zA-Z\[\\]]+", " ", guess_name), {"excludes": ["country", "language"]}).get(
+                                    "title",
+                                    str(guessit_fn(re.sub("[^0-9a-zA-Z]+", " ", guess_name), {"excludes": ["country", "language"]}).get("title", ""))
+                                ))
+                            except Exception as e:
+                                console.print(f"[red]Error extracting title from video name: {e}[/red]")
+                                raise Exception(f"Error extracting title from video name: {e}") from e
 
-                untouched_filename = os.path.basename(video)
-            except Exception as e:
-                console.print(f"[red]Error processing filename: {e}[/red]")
-                raise Exception(f"Error processing filename: {e}") from e
+                    untouched_filename = os.path.basename(video)
+                except Exception as e:
+                    console.print(f"[red]Error processing filename: {e}[/red]")
+                    raise Exception(f"Error processing filename: {e}") from e
 
-            try:
-                if not meta.get('emby', False):
-                    # rely only on guessit for search_year for tv matching
-                    try:
-                        meta['search_year'] = guessit_fn(video)['year']
-                    except Exception:
-                        meta['search_year'] = ""
+                try:
+                    if not meta.get('emby', False):
+                        # rely only on guessit for search_year for tv matching
+                        try:
+                            meta['search_year'] = guessit_fn(video)['year']
+                        except Exception:
+                            meta['search_year'] = ""
 
-                    if not meta.get('edit', False):
-                        mi = await exportInfo(videopath, meta['isdir'], meta['uuid'], base_dir, is_dvd=meta.get('is_disc', False), debug=meta.get('debug', False))
-                        meta['mediainfo'] = mi
+                        if not meta.get('edit', False):
+                            mi = await exportInfo(videopath, meta['isdir'], meta['uuid'], base_dir, is_dvd=meta.get('is_disc', False), debug=meta.get('debug', False))
+                            meta['mediainfo'] = mi
+                        else:
+                            mi = meta['mediainfo']
+
+                        if meta.get('resolution') is None:
+                            meta['resolution'], meta['hfr'] = await video_manager.get_resolution(guessit_fn(video), meta['uuid'], base_dir, meta)
+
+                        meta['sd'] = await video_manager.is_sd(meta['resolution'])
                     else:
-                        mi = meta['mediainfo']
-
-                    if meta.get('resolution') is None:
-                        meta['resolution'], meta['hfr'] = await video_manager.get_resolution(guessit_fn(video), meta['uuid'], base_dir, meta)
-
-                    meta['sd'] = await video_manager.is_sd(meta['resolution'])
-                else:
-                    meta['resolution'] = "1080p"
-                    meta['search_year'] = ""
-            except Exception as e:
-                console.print(f"[red]Error processing Mediainfo: {e}[/red]")
-                raise Exception(f"Error processing Mediainfo: {e}") from e
+                        meta['resolution'] = "1080p"
+                        meta['search_year'] = ""
+                except Exception as e:
+                    console.print(f"[red]Error processing Mediainfo: {e}[/red]")
+                    raise Exception(f"Error processing Mediainfo: {e}") from e
 
         source_size = 0
         if not meta['is_disc']:
@@ -747,7 +842,8 @@ class Prep:
         if isinstance(manual_language, str) and manual_language:
             meta['original_language'] = manual_language.lower()
 
-        meta['type'] = await video_manager.get_type(video, meta['scene'], meta['is_disc'], meta)
+        if meta.get('category') != 'MUSIC':
+            meta['type'] = await video_manager.get_type(video, meta['scene'], meta['is_disc'], meta)
 
         # if it's not an anime, we can run season/episode checks now to speed the process
         if meta.get("not_anime", False) and meta.get("category") == "TV":
@@ -756,7 +852,7 @@ class Prep:
         mi_data: dict[str, Any] = mi or {}
 
         # Run a check against mediainfo to see if it has tmdb/imdb
-        if (meta.get('tmdb_id') == 0 or meta.get('imdb_id') == 0) and not meta.get('emby', False):
+        if (meta.get('tmdb_id') == 0 or meta.get('imdb_id') == 0) and not meta.get('emby', False) and meta.get('category') in ("TV", "MOVIE"):
             meta['category'], meta['tmdb_id'], meta['imdb_id'], meta['tvdb_id'] = await self.tmdb_manager.get_tmdb_imdb_from_mediainfo(
                 mi_data, meta
             )
@@ -765,14 +861,17 @@ class Prep:
         if meta.get('imdb_id', 0) == 0 and meta.get('tvdb_id', 0) == 0 and meta.get('tmdb_id', 0) == 0 and meta.get('tvmaze_id', 0) == 0 and meta.get('mal_id', 0) == 0 and meta.get('emby', False):
             meta['no_ids'] = True
 
-        meta['video_duration'] = await video_manager.get_video_duration(meta)
+        if meta.get('category') != 'MUSIC':
+            meta['video_duration'] = await video_manager.get_video_duration(meta)
+        else:
+            meta['video_duration'] = None
         duration = meta.get('video_duration', None)
 
         unattended = not (not meta['unattended'] or meta['unattended'] and meta.get('unattended_confirm', False))
         debug = bool(meta.get('emby_debug', False) or meta['debug'])
 
         # run a search to find tmdb and imdb ids if we don't have them
-        if int(meta.get('tmdb_id') or 0) == 0 and int(meta.get('imdb_id') or 0) == 0:
+        if meta.get('category') in ("TV", "MOVIE") and int(meta.get('tmdb_id') or 0) == 0 and int(meta.get('imdb_id') or 0) == 0:
             if meta.get('category') == "TV":
                 year = meta.get('manual_year', '') or meta.get('search_year', '') or meta.get('year', '')
             elif meta.get('emby_debug', False):
@@ -873,7 +972,7 @@ class Prep:
             meta['imdb_info'] = None
 
         # Get IMDb ID if not set
-        if meta.get('imdb_id') == 0:
+        if meta.get('category') in ("TV", "MOVIE") and meta.get('imdb_id') == 0:
             try:
                 search_year_value = _normalize_search_year(meta.get('search_year'))
                 meta['imdb_id'] = await imdb_manager.search_imdb(
@@ -1126,31 +1225,43 @@ class Prep:
 
             meta['audio'], meta['channels'], meta['has_commentary'] = await self.audio_manager.get_audio_v2(mi_data, meta, bdinfo)
 
-            meta['3D'] = await video_manager.is_3d(bdinfo)
-
-            is_disc_value = str(meta.get('is_disc') or "")
-            meta['source'], meta['type'] = await get_source(meta['type'], video, str(meta.get('path') or ""), is_disc_value, meta, folder_id, base_dir)
-
-            meta['uhd'] = await video_manager.get_uhd(
-                meta['type'],
-                guessit_fn(str(meta.get('path') or "")),
-                str(meta.get('resolution', '')),
-                str(meta.get('path') or ""),
-            )
-            meta['hdr'] = await video_manager.get_hdr(mi_data, bdinfo)
-
-            meta['distributor'] = await get_distributor(meta['distributor'])
-            if meta['distributor'] is None:
+            if meta.get('category') == 'MUSIC':
+                meta['3D'] = ""
+                meta['source'] = 'WEB' if 'WEB' in str(meta.get('type', '')).upper() else ('CD' if 'DISC' in str(meta.get('type', '')).upper() else 'OTHER')
+                meta['uhd'] = ""
+                meta['hdr'] = ""
                 meta['distributor'] = ""
-
-            if meta.get('is_disc', None) == "BDMV":  # Blu-ray Specific
-                meta['region'] = await get_region(bdinfo, meta.get('region', None))
-                meta['video_codec'] = await video_manager.get_video_codec(bdinfo)
-            else:
-                meta['video_encode'], meta['video_codec'], meta['has_encode_settings'], meta['bit_depth'] = await video_manager.get_video_encode(mi_data, meta['type'], bdinfo)
-
-            if meta['region'] is None:
                 meta['region'] = ""
+                meta['video_encode'] = ""
+                meta['video_codec'] = ""
+                meta['has_encode_settings'] = False
+                meta['bit_depth'] = ""
+            else:
+                meta['3D'] = await video_manager.is_3d(bdinfo)
+
+                is_disc_value = str(meta.get('is_disc') or "")
+                meta['source'], meta['type'] = await get_source(meta['type'], video, str(meta.get('path') or ""), is_disc_value, meta, folder_id, base_dir)
+
+                meta['uhd'] = await video_manager.get_uhd(
+                    meta['type'],
+                    guessit_fn(str(meta.get('path') or "")),
+                    str(meta.get('resolution', '')),
+                    str(meta.get('path') or ""),
+                )
+                meta['hdr'] = await video_manager.get_hdr(mi_data, bdinfo)
+
+                meta['distributor'] = await get_distributor(meta['distributor'])
+                if meta['distributor'] is None:
+                    meta['distributor'] = ""
+
+                if meta.get('is_disc', None) == "BDMV":  # Blu-ray Specific
+                    meta['region'] = await get_region(bdinfo, meta.get('region', None))
+                    meta['video_codec'] = await video_manager.get_video_codec(bdinfo)
+                else:
+                    meta['video_encode'], meta['video_codec'], meta['has_encode_settings'], meta['bit_depth'] = await video_manager.get_video_encode(mi_data, meta['type'], bdinfo)
+
+                if meta['region'] is None:
+                    meta['region'] = ""
 
             if meta.get('no_edition') is False:
                 manual_edition = meta.get('manual_edition') or ""
@@ -1284,6 +1395,10 @@ class Prep:
                 return "MOVIE"
             elif manual_cat_str in ('34', '7', 'TV_HD', 'TV_SD'):
                 return "TV"
+            elif manual_cat_str in ('29', '3', 'MUSIC', 'GLAZBA', 'MUSIC_FLAC', 'MUSIC_MP3', 'FLAC', 'MP3'):
+                return "MUSIC"
+            elif manual_cat_str in ('5', 'GAME', 'GAMES', 'PC_GAME'):
+                return "GAME"
             # For 18 (Crtani), 12 (Dokumentarni), 31 (Anime), or other tracker categories:
             # Do NOT force a wrong internal category. Fall through to auto-detection (TV vs MOVIE)!
 

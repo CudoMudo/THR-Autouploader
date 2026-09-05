@@ -265,26 +265,31 @@ class TorrentCreator:
                         # if len(no_sample_globs) == 1:
                         #     path = meta['filelist'][0]
                         
-                        exclude = ["*sample.mkv", "!sample*.*"] if not meta['is_disc'] else []
-                        include = ["*.mkv", "*.mp4", "*.ts", "*.srt", "*.sub", "*.idx", "*.vtt", "*.ass", "*.ssa", "*.txt"] if not meta['is_disc'] else []
-                    else:
-                        folder_name = os.path.basename(str(path))
-                        include = [
-                            f"{folder_name}/{os.path.basename(f)}"
-                            for f in meta['filelist']
-                        ]
-                        exclude = ["*", "*/**"]
+                is_music = str(meta.get('category', '')).upper() == 'MUSIC' or any(
+                    str(f).lower().endswith(('.flac', '.mp3', '.m4a', '.wav', '.ape', '.aac', '.ogg'))
+                    for f in meta.get('filelist', [])
+                )
+                if is_music:
+                    exclude = []
+                    include = [
+                        "*.flac", "*.mp3", "*.m4a", "*.wav", "*.ape", "*.alac", "*.aac", "*.ogg",
+                        "*.cue", "*.log", "*.m3u", "*.m3u8", "*.txt", "*.nfo",
+                        "*.jpg", "*.jpeg", "*.png",
+                        "*/*.flac", "*/*.mp3", "*/*.m4a", "*/*.wav", "*/*.ape", "*/*.alac", "*/*.aac", "*/*.ogg",
+                        "*/*.cue", "*/*.log", "*/*.m3u", "*/*.m3u8", "*/*.txt", "*/*.nfo",
+                        "*/*.jpg", "*/*.jpeg", "*/*.png"
+                    ]
                 else:
                     exclude = ["*sample.mkv", "!sample*.*"] if not meta['is_disc'] else []
                     include = ["*.mkv", "*.mp4", "*.ts", "*.srt", "*.sub", "*.idx", "*.vtt", "*.ass", "*.ssa", "*.txt"] if not meta['is_disc'] else []
 
-                # Non-media files filtering for clean torrent payload (.nfo, .jpg, .jpeg, .png, .m3u, .m3u8)
-                clean_metadata_excludes = ["*.jpg", "*.jpeg", "*.png", "*.m3u", "*.m3u8", "*/*.jpg", "*/*.jpeg", "*/*.png", "*/*.m3u", "*/*.m3u8"]
-                if not meta.get('keep_nfo', False):
-                    clean_metadata_excludes.extend(["*.nfo", "*/*.nfo"])
-                for pat in clean_metadata_excludes:
-                    if pat not in exclude and "*" not in exclude:
-                        exclude.append(pat)
+                    # Non-media files filtering for clean torrent payload (.nfo, .jpg, .jpeg, .png, .m3u, .m3u8)
+                    clean_metadata_excludes = ["*.jpg", "*.jpeg", "*.png", "*.m3u", "*.m3u8", "*/*.jpg", "*/*.jpeg", "*/*.png", "*/*.m3u", "*/*.m3u8"]
+                    if not meta.get('keep_nfo', False):
+                        clean_metadata_excludes.extend(["*.nfo", "*/*.nfo"])
+                    for pat in clean_metadata_excludes:
+                        if pat not in exclude and "*" not in exclude:
+                            exclude.append(pat)
 
                 # If using mkbrr, run the external application
                 if meta.get('mkbrr'):

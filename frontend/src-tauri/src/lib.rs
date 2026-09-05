@@ -293,17 +293,30 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         args.push("-sdc".to_string());
     }
 
+    let is_music = payload.category == "music" || payload.category == "29" || payload.category == "3";
+
     if !payload.tmdb_id.is_empty() {
         if payload.tmdb_id.starts_with("tt") {
             args.push("-imdb".to_string());
-        } else if payload.category == "game" {
+            args.push(payload.tmdb_id.clone());
+        } else if payload.category == "game" || payload.category == "5" {
             args.push("-igdb".to_string());
-        } else if payload.category == "music" {
+            args.push(payload.tmdb_id.clone());
+        } else if is_music {
             args.push("-discogs".to_string());
+            let cleaned = if let Some(idx) = payload.tmdb_id.find("/release/") {
+                let after = &payload.tmdb_id[idx + 9..];
+                let num_str: String = after.chars().take_while(|c| c.is_ascii_digit()).collect();
+                if !num_str.is_empty() { num_str } else { payload.tmdb_id.clone() }
+            } else {
+                let num_str: String = payload.tmdb_id.chars().filter(|c| c.is_ascii_digit()).collect();
+                if !num_str.is_empty() { num_str } else { payload.tmdb_id.clone() }
+            };
+            args.push(cleaned);
         } else {
             args.push("-tmdb".to_string());
+            args.push(payload.tmdb_id.clone());
         }
-        args.push(payload.tmdb_id.clone());
     }
     
     if !payload.category.is_empty() {
@@ -316,7 +329,7 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         args.push(payload.type_val.clone());
     }
 
-    if !payload.resolution.is_empty() {
+    if !payload.resolution.is_empty() && !is_music && payload.resolution != "other" {
         args.push("-res".to_string());
         args.push(payload.resolution.clone());
     }
