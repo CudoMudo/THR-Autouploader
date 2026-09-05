@@ -11,6 +11,8 @@ import aiohttp
 import defusedxml.xmlrpc
 import qbittorrentapi
 from torf import Torrent
+from src.torrentcreate import patch_torf
+patch_torf()
 
 from src.console import console
 from src.torrent_clients import DelugeClientMixin, QbittorrentClientMixin, RtorrentClientMixin, TransmissionClientMixin

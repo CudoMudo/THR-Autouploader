@@ -66,6 +66,10 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
   - **Tauri Build Pravilo:**
     - Produkcijski `.exe` se MORA graditi pozivom `bun run tauri build --no-bundle` (ili `bun run tauri build`), a NE čistim `cargo build --release`, kako bi se frontend dist asseti ugradili u `.exe` preko `tauri.localhost` protokola umjesto dev servera `localhost:1420`.
 
+- **v1.4.5:**
+  - **Ispravak Cross-seeda i Torf Parsiranja (`creation_date: not bytes`):**
+    - `torrentcreate.py`, `upload.py`, `clients.py`: Implementiran `patch_torf()` koji presreće `torf.Torrent.creation_date.setter`. Budući da UNIT3D (TorrentHR) pri preuzimanju generira torrent u kojem je polje `creation date` bencoded kao string/bytes (`b'1775559027'`) a ne integer, originalni `torf` je bacao `ValueError: Must be None, int or datetime object, not bytes`. Patch automatski dekodira bytes u int timestamp i omogućuje glatko automatsko ubacivanje torenta u klijent.
+
 - **v1.4.4:**
   - **Ispravak Argparse Parsinga za Screenshotove (`'creens'` error):**
     - `lib.rs`: Izmijenjen argument za broj slika s `-screens` na `-s`. Python argparse kratku zastavicu s više slova (`-screens`) parsira kao flag `-s` s vrijednošću `'creens'`, što je rušilo `int('creens')` i posljedično ostavljalo `meta['uuid']` neinicijaliziranim.

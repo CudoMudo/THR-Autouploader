@@ -29,6 +29,8 @@ import requests
 from packaging import version
 from torf import Torrent
 from typing_extensions import TypeAlias
+from src.torrentcreate import patch_torf
+patch_torf()
 
 from bin.get_mkbrr import MkbrrBinaryManager
 from cogs.redaction import Redaction

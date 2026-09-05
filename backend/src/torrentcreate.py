@@ -21,6 +21,34 @@ import torf
 from torf import Torrent
 from typing_extensions import TypeAlias
 
+
+def patch_torf() -> None:
+    """Monkey-patch torf.Torrent.creation_date to accept bytes/strings from UNIT3D/trackers."""
+    if getattr(torf, '_thr_patched', False):
+        return
+    torf._thr_patched = True
+
+    _orig_fset = torf.Torrent.creation_date.fset
+    _orig_fget = torf.Torrent.creation_date.fget
+
+    def _safe_creation_date_setter(self: Any, value: Any) -> None:
+        if isinstance(value, (bytes, bytearray)):
+            try:
+                value = int(value.decode('utf-8', errors='ignore'))
+            except (ValueError, TypeError):
+                value = None
+        elif isinstance(value, str):
+            try:
+                value = int(value)
+            except (ValueError, TypeError):
+                value = None
+        _orig_fset(self, value)
+
+    torf.Torrent.creation_date = property(_orig_fget, _safe_creation_date_setter)
+
+
+patch_torf()
+
 from src.console import console
 
 PIECE_SIZE_MIN = 32 * 1024  # 32 KiB

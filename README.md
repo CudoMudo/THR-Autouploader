@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.4.4_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.4.5_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,10 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.4 (Trenutna Verzija)
+### v1.4.5 (Trenutna Verzija)
+* **Fix - Cross-seed i Torf Kompatibilnost (`creation_date: not bytes`):** Riješena greška `Cross-seed handling failed for THR: Must be None, int or datetime object, not bytes: b'1775559027'`. UNIT3D tracker u preuzetom `.torrent` fajlu šalje `creation date` kao byte string umjesto cjelobrojnog broja. Implementiran je automatski patch za `torf` biblioteku koji sigurno pretvara byte stringove u Unix timestamp, omogućujući nesmetano automatsko ubacivanje torenta u klijent (cross-seed).
+
+### v1.4.4
 * **Fix - Argument Parser za Broj Slika (`invalid literal for int(): 'creens'`):** Ispravljen argument za broj screenshotova u GUI-ju s nevažećeg `-screens` na `-s` (argparse je tumačio `-screens` kao kratku opciju `-s` s vrijednošću `'creens'`). U `args.py` dodan i `-screens` alias radi robusnosti.
 
 ### v1.4.3
