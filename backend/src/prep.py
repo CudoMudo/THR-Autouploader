@@ -345,6 +345,9 @@ class Prep:
                 meta['resolution'] = 'other'
                 meta['sd'] = 0
                 meta['hfr'] = False
+                meta['screens'] = 0
+                meta['skip_imghost_upload'] = True
+                meta['image_list'] = []
 
                 if any(f.lower().endswith('.flac') for f in audio_files_found) or raw_manual_cat == '29' or 'FLAC' in videoloc.upper():
                     meta['audio'] = 'FLAC'
@@ -1241,6 +1244,9 @@ class Prep:
                 meta['video_codec'] = ""
                 meta['has_encode_settings'] = False
                 meta['bit_depth'] = ""
+                meta['screens'] = 0
+                meta['skip_imghost_upload'] = True
+                meta['image_list'] = []
             else:
                 meta['3D'] = await video_manager.is_3d(bdinfo)
 

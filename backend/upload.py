@@ -754,6 +754,19 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
         videopath: str = file_list[0] if file_list else ""
         console.print(f"Processing {filename} for upload.....")
 
+        is_music_upload = (
+            str(meta.get('category', '')).upper() == 'MUSIC'
+            or any(
+                str(f).lower().endswith(('.flac', '.mp3', '.m4a', '.wav', '.ape', '.aac', '.ogg'))
+                for f in meta.get('filelist', [])
+            )
+        )
+        if is_music_upload:
+            meta['category'] = 'MUSIC'
+            meta['skip_imghost_upload'] = True
+            meta['screens'] = 0
+            meta['image_list'] = []
+
         meta['frame_overlay'] = config['DEFAULT'].get('frame_overlay', False)
         tracker_status_map = cast(dict[str, dict[str, Any]], meta.get('tracker_status', {}))
         for tracker in ['AZ', 'CZ', 'PHD']:
@@ -870,10 +883,6 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                             raise Exception(f"Error during screenshot capture: {e}") from e
 
                     else:
-                        is_music_upload = str(meta.get('category', '')).upper() == 'MUSIC' or any(
-                            str(f).lower().endswith(('.flac', '.mp3', '.m4a', '.wav', '.ape', '.aac', '.ogg'))
-                            for f in meta.get('filelist', [])
-                        )
                         if not is_music_upload:
                             try:
                                 if meta['debug']:
@@ -933,7 +942,7 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                 if manual_frames_count > 0:
                     meta['screens'] = manual_frames_count
                 cutoff = int(meta.get('cutoff') or 1)
-                if len(meta.get('image_list', [])) < cutoff and meta.get('skip_imghost_upload', False) is False:
+                if not is_music_upload and len(meta.get('image_list', [])) < cutoff and meta.get('skip_imghost_upload', False) is False:
                     # Validate and (if needed) rehost images to tracker-approved hosts before uploading any new screenshots.
                     trackers_with_image_host_requirements = {'A4K', 'BHD', 'DC', 'GPW', 'HUNO', 'MTV', 'OE', 'PTP', 'STC', 'TVC'}
 

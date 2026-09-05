@@ -6,7 +6,7 @@ from typing import Any, Optional
 import httpx
 from src.console import console
 
-USER_AGENT = "THR-Autouploader/1.4.2"
+USER_AGENT = "THR-Autouploader/1.4.3"
 
 
 def extract_discogs_id_from_str(s: str) -> Optional[int]:

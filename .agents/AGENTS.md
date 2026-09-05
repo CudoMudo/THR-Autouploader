@@ -66,6 +66,13 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
   - **Tauri Build Pravilo:**
     - Produkcijski `.exe` se MORA graditi pozivom `bun run tauri build --no-bundle` (ili `bun run tauri build`), a NE čistim `cargo build --release`, kako bi se frontend dist asseti ugradili u `.exe` preko `tauri.localhost` protokola umjesto dev servera `localhost:1420`.
 
+- **v1.4.3:**
+  - **Isključen Screenshot Upload za Glazbu (`No images uploaded` fix):**
+    - `upload.py`: U `process_meta` rano se detektira `is_music_upload` te se forsira `meta['skip_imghost_upload'] = True`, `meta['screens'] = 0`, `meta['image_list'] = []`. Uvjet za slanje slika na hostove dopunjen s `not is_music_upload`.
+    - `prep.py`: U glazbenim granama postavljen `meta['skip_imghost_upload'] = True` i `meta['screens'] = 0`.
+    - `uploadscreens.py`: U `_upload_screens` dodan rani izlaz ako je `total_screens <= 0` ili je kategorija `MUSIC`, te siguran povratak bez bacanja iznimke ako je lista slika (`image_glob`) prazna.
+    - `lib.rs`: Iz Tauri sučelja se za glazbu (`is_music`) automatski šalju argumenti `-siu` i `-screens 0`.
+
 - **v1.4.2:**
   - **Ispravci Grešaka u Runtimeu (Live Testiranje Glazbe):**
     - `uphelper.py`: Implementiran `_safe_int()` za `tmdb_id`, `imdb_id`, `tvdb_id`, `tvmaze_id`, `mal_id` te siguran fallback za `overview` i `genres` (rješava `KeyError: 'overview'`). Dodan prikaz Discogs URL-a u potvrdi.

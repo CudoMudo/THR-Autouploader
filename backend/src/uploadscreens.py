@@ -673,6 +673,9 @@ async def _upload_screens(
     default_config = config.get('DEFAULT', {})
     if 'image_list' not in meta:
         meta['image_list'] = []
+
+    if total_screens <= 0 or str(meta.get('category', '')).upper() == 'MUSIC' or meta.get('skip_imghost_upload', False):
+        return cast(list[ImageDict], meta['image_list']), len(meta['image_list'])
     upload_start_time: Optional[float] = None
     if meta.get('debug'):
         upload_start_time = time.time()
@@ -749,6 +752,11 @@ async def _upload_screens(
             return int(match.group(1)) if match else float('inf')
 
         image_glob.sort(key=extract_numeric_suffix)
+
+        if not image_glob:
+            if meta.get('debug'):
+                console.print("[yellow]No screenshot images found to upload.[/yellow]")
+            return image_list, len(image_list)
 
         if meta['debug']:
             console.print("image globs (sorted):", image_glob)

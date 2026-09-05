@@ -295,6 +295,12 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
 
     let is_music = payload.category == "music" || payload.category == "29" || payload.category == "3";
 
+    if is_music {
+        args.push("-siu".to_string());
+        args.push("-screens".to_string());
+        args.push("0".to_string());
+    }
+
     if !payload.tmdb_id.is_empty() {
         if payload.tmdb_id.starts_with("tt") {
             args.push("-imdb".to_string());
