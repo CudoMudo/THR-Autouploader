@@ -15,6 +15,15 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
    - Izbaciti `backend/dist`, `backend/build` (zaostali PyInstaller buildovi).
    - Isprazniti `backend/tmp` i `backend/Torrents` (lokalni testni fajlovi poput filmova).
    Za sigurno pakiranje releasea koristi se skripta `Pack-PortableRelease.ps1` iz root foldera koja to sve radi automatski (i skida veličinu ZIP-a sa 150MB na 12MB).
+5. **OBAVEZAN VERSION BUMP KOD IZMJENA KODA:**
+   - Kod svake promjene na source kodu (bilo backend, frontend ili tracker logika), **OBAVEZNO** se mora bumpati verzija (patch/minor/major).
+   - Verzija se sinkronizirano ažurira u:
+     - `frontend/src-tauri/tauri.conf.json` (`version`)
+     - `frontend/package.json` (`version`)
+     - `backend/src/discogs.py` (`USER_AGENT`)
+     - `README.md` (download link i nova sekcija u changelogu)
+     - `.agents/AGENTS.md` (tehnički sažetak za agente)
+
 
 **LOG RADOVA / CHANGELOG (Za Agente):**
 - **v1.3.7:**
