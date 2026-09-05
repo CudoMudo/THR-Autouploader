@@ -57,7 +57,8 @@ class TrackerStatusManager:
 
             if tracker_name in tracker_class_map:
                 tracker_class: Any = tracker_class_map[tracker_name](config=self.config)
-                if tracker_name in {"THR", "PTP"} and local_meta.get('imdb_id', 0) == 0:
+                needs_imdb = (tracker_name == "PTP") or (tracker_name == "THR" and str(local_meta.get('category', '')).upper() in ("MOVIE", "TV"))
+                if needs_imdb and local_meta.get('imdb_id', 0) == 0:
                     while True:
                         if local_meta.get('unattended', False):
                             local_meta['imdb_id'] = 0

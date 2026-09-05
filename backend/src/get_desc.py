@@ -548,7 +548,7 @@ class DescriptionBuilder:
         else:
             images = meta["image_list"]
             multi_screens = int(self.config["DEFAULT"].get("multiScreens", 2))
-        if meta.get("sorted_filelist"):
+        if meta.get("sorted_filelist") or str(meta.get("category", "")).upper() == "MUSIC":
             multi_screens = 0
 
         desc_parts: list[str] = []
@@ -758,6 +758,8 @@ class DescriptionBuilder:
         return pack_images_data
 
     async def _handle_discs_and_screenshots(self, meta: dict[str, Any], approved_image_hosts: list[str], images: list[dict[str, str]], multi_screens: int) -> str:
+        if str(meta.get("category", "")).upper() == "MUSIC":
+            return ""
         try:
             screenheader = await self.screenshot_header()
         except Exception:

@@ -116,8 +116,10 @@ class THR(UNIT3D):
             'WEBDL': '4',
             'WEBRIP': '5',
             'HDTV': '6',
-            'ENCODE': '3'
-        }.get(meta['type'], '0')
+            'ENCODE': '3',
+            'OTHER': '8',
+            'OSTALO': '8',
+        }.get(str(meta.get('type', '')).upper(), '8')
         return {'type_id': type_id}
 
     # If default UNIT3D resolutions, remove this function
@@ -140,8 +142,10 @@ class THR(UNIT3D):
             '576p': '6',
             '576i': '7',
             '480p': '8',
-            '480i': '9'
-        }.get(meta['resolution'], '10')
+            '480i': '9',
+            'OTHER': '10',
+            'OSTALO': '10',
+        }.get(str(meta.get('resolution', '')).upper(), '10')
         return {'resolution_id': resolution_id}
 
     # If there are tracker specific checks to be done before upload, add them here

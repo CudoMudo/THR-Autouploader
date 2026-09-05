@@ -73,4 +73,12 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
     - Na grešci backend završava s exit kodom `1`, pa Tauri točno registrira neuspjeh i ne prikazuje lažnu poruku o uspjehu.
   - **Glazbene Datoteke u Torrentu (`backend/src/torrentcreate.py`):**
     - Uključene sve audio ekstenzije (`.flac`, `.mp3`, `.wav`, `.m4a`, `.ape`, `.cue`, `.log`, `.m3u`, itd.) te popratne slike (cover art) u torrent payloadu.
+  - **Ispravci Grešaka u Runtimeu (Live Testiranje Glazbe):**
+    - `uphelper.py`: Implementiran `_safe_int()` za `tmdb_id`, `imdb_id`, `tvdb_id`, `tvmaze_id`, `mal_id` te siguran fallback za `overview` i `genres` (rješava `KeyError: 'overview'`). Dodan prikaz Discogs URL-a u potvrdi.
+    - `trackerstatus.py`: Uvjet `needs_imdb` ograničen isključivo na `MOVIE` i `TV` kategorije. Glazba više ne dobiva `skipped = True` u unattended modu.
+    - `trackers/THR.py`: Mapiran `type_id` za "OTHER" / "OSTALO" na `8` (ispravan ID u THR UNIT3D bazi) umjesto `0` koji je izazivao `{"type_id":["Odabrano polje type id nije ispravno."]}`. Fallback rezolucije postavljen na `'10'`.
+    - `get_desc.py`: Postavljen `multi_screens = 0` za `MUSIC` i dodan early exit u `_handle_discs_and_screenshots` kako se naziv prve pjesme ne bi ubacivao kao lažni screenshot blok u opis torenta.
+    - `prep.py`: Inicijalizirani `overview` i `genres` na prazan string za glazbu te zaobiđen `validate_mediainfo` (koji traži video streamove).
+  - **PyInstaller Bundling Pravilo za Agente:**
+    - Kod svake izmjene u `backend/src/*.py`, `backend/dist/upload/upload.exe` MORA se ponovno kompajlirati pomoću `pyinstaller --noconfirm upload.spec` unutar `backend/` mape prije pokretanja `Pack-PortableRelease.ps1`, jer portable release pakira kompajlirani `upload.exe` a ne sirove `.py` skripte.
 

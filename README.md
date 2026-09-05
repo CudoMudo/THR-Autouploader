@@ -63,7 +63,11 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 ### v1.4.1 (Trenutna Verzija)
 * **Feature - Discogs Integracija za Glazbu:** Novi modul `backend/src/discogs.py` automatski prepoznaje glazbena izdanja (izvođač, album, godina, izdavač, kataloški broj) iz naziva foldera i pretražuje javni Discogs API. Podržan je i ručni unos Discogs ID-a ili punog URL-a u sučelju.
 * **Feature - Preuzimanje Cover Arta za Glazbu:** Automatsko preuzimanje i prikaz cover slike s Discogsa visoke rezolucije unutar forme i generiranih metapodataka.
-* **Fix - Glazba Tip i Rezolucija:** Automatsko postavljanje tipa i rezolucije na *Ostalo (Other)* za kategorije Glazba / FLAC (29) i Glazba / MP3 (3), bez prosljeđivanja nevažećih video rezolucija na UNIT3D tracker.
+* **Fix - Siguran Prikaz Metapodataka (`KeyError: 'overview'`):** U `uphelper.py` implementiran siguran pristup za polja `overview`, `genres` i sve numeričke ID-eve, rješavajući pucanje skripte kod prikaza glazbenih informacija.
+* **Fix - Preskakanje Glazbe na Trackeru:** U `trackerstatus.py` uvjet `needs_imdb` ograničen isključivo na filmove i serije, čime je spriječeno neželjeno preskakanje uploada glazbe na THR u unattended modu.
+* **Fix - Ispravan Tip za Glazbu na THR:** U `trackers/THR.py` mapiran `type_id` za "Ostalo" na ID `8` umjesto nepostojećeg `0` (rješava API grešku *"Odabrano polje type id nije ispravno"*).
+* **Fix - Čist Opis Glazbenih Torrenata:** U `get_desc.py` isključena generacija screenshot blokova za glazbu (`multi_screens = 0`), eliminirajući nehotično ubacivanje naziva prve pjesme u opis torenta.
+* **Fix - Glazba Tip i Rezolucija u GUI:** Automatsko postavljanje tipa i rezolucije na *Ostalo (Other)* za kategorije Glazba / FLAC (29) i Glazba / MP3 (3), bez prosljeđivanja nevažećih video rezolucija na UNIT3D tracker.
 * **Fix - Otklanjanje `name 'exit' is not defined`:** Uklonjen fatalan poziv `exit()` u video skripti koji je rušio obradu audio foldera.
 * **Fix - Pouzdana Detekcija Grešaka & Status:** Backend skripta sada signalizira neuspjeh s exit kodom `1`, sprječavajući lažne "Uspjeh! Torrent je uspješno uploadan" poruke kada se dogodi pogreška.
 * **Fix - Glazbene Datoteke u Torrentu:** Osigurano uključivanje svih glazbenih formata (.flac, .mp3, .wav, .m4a, .ape, .cue, .log) i popratnih slika unutar kreiranog torrenta.

@@ -408,6 +408,11 @@ class Prep:
                     if discogs_data.get('genres'):
                         meta['genres'] = ', '.join(discogs_data['genres'])
 
+                if 'overview' not in meta or meta.get('overview') is None:
+                    meta['overview'] = ''
+                if 'genres' not in meta or meta.get('genres') is None:
+                    meta['genres'] = ''
+
             else:
                 videopath, meta['filelist'] = await video_manager.get_video(videoloc, meta.get('mode', 'discord'), meta.get('sorted_filelist', False), meta.get('debug', False))
                 filelist = cast(list[str], meta.get('filelist') or [])
@@ -561,7 +566,7 @@ class Prep:
                 raise Exception("Conformance errors found in mediainfo")
 
         meta['valid_mi'] = True
-        if not meta['is_disc'] and not meta.get('emby', False):
+        if not meta['is_disc'] and not meta.get('emby', False) and meta.get('category') != 'MUSIC':
             try:
                 valid_mi = validate_mediainfo(meta, debug=meta['debug'])
             except NoAudioMediaError as e:

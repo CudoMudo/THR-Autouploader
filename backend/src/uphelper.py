@@ -315,52 +315,63 @@ class UploadHelper:
         console.print(f"[bold]Title:[/bold] {meta['title']} ({meta['year']})")
         console.print()
         if not meta.get('emby', False):
-            console.print(f"[bold]Overview:[/bold] {meta['overview'][:100]}....")
-            console.print()
+            if meta.get('overview'):
+                console.print(f"[bold]Overview:[/bold] {str(meta['overview'])[:100]}....")
+                console.print()
             if meta.get('category') == 'TV' and not meta.get('tv_pack') and meta.get('auto_episode_title'):
                 console.print(f"[bold]Episode Title:[/bold] {meta['auto_episode_title']}")
                 console.print()
             if meta.get('category') == 'TV' and not meta.get('tv_pack') and meta.get('overview_meta'):
                 console.print(f"[bold]Episode overview:[/bold] {meta['overview_meta']}")
                 console.print()
-            console.print(f"[bold]Genre:[/bold] {meta['genres']}")
-            console.print()
+            if meta.get('genres'):
+                console.print(f"[bold]Genre:[/bold] {meta['genres']}")
+                console.print()
             if str(meta.get('demographic', '')) != '':
                 console.print(f"[bold]Demographic:[/bold] {meta['demographic']}")
                 console.print()
-        console.print(f"[bold]Category:[/bold] {meta['category']}")
+        console.print(f"[bold]Category:[/bold] {meta.get('category', '')}")
         console.print()
+
+        def _safe_int(v: Any) -> int:
+            try:
+                return int(v or 0)
+            except (ValueError, TypeError):
+                return 0
+
         if meta.get('emby_debug', False):
-            if int(meta.get('original_imdb', 0)) != 0:
-                imdb = str(meta.get('original_imdb', 0)).zfill(7)
+            if _safe_int(meta.get('original_imdb', 0)) != 0:
+                imdb = str(_safe_int(meta.get('original_imdb', 0))).zfill(7)
                 console.print(f"[bold]IMDB:[/bold] https://www.imdb.com/title/tt{imdb}")
-            if int(meta.get('original_tmdb', 0)) != 0:
-                console.print(f"[bold]TMDB:[/bold] https://www.themoviedb.org/{meta['category'].lower()}/{meta['original_tmdb']}")
-            if int(meta.get('original_tvdb', 0)) != 0:
+            if _safe_int(meta.get('original_tmdb', 0)) != 0:
+                console.print(f"[bold]TMDB:[/bold] https://www.themoviedb.org/{str(meta.get('category', '')).lower()}/{meta['original_tmdb']}")
+            if _safe_int(meta.get('original_tvdb', 0)) != 0:
                 console.print(f"[bold]TVDB:[/bold] https://www.thetvdb.com/?id={meta['original_tvdb']}&tab=series")
-            if int(meta.get('original_tvmaze', 0)) != 0:
+            if _safe_int(meta.get('original_tvmaze', 0)) != 0:
                 console.print(f"[bold]TVMaze:[/bold] https://www.tvmaze.com/shows/{meta['original_tvmaze']}")
-            if int(meta.get('original_mal', 0)) != 0:
+            if _safe_int(meta.get('original_mal', 0)) != 0:
                 console.print(f"[bold]MAL:[/bold] https://myanimelist.net/anime/{meta['original_mal']}")
         else:
-            if int(meta.get('tmdb_id') or 0) != 0:
-                console.print(f"[bold]TMDB:[/bold] https://www.themoviedb.org/{meta['category'].lower()}/{meta['tmdb_id']}")
-            if int(meta.get('imdb_id') or 0) != 0:
-                console.print(f"[bold]IMDB:[/bold] https://www.imdb.com/title/tt{meta['imdb']}")
-            if int(meta.get('tvdb_id') or 0) != 0:
+            if _safe_int(meta.get('tmdb_id')) != 0:
+                console.print(f"[bold]TMDB:[/bold] https://www.themoviedb.org/{str(meta.get('category', '')).lower()}/{meta['tmdb_id']}")
+            if _safe_int(meta.get('imdb_id')) != 0:
+                console.print(f"[bold]IMDB:[/bold] https://www.imdb.com/title/tt{meta.get('imdb', '')}")
+            if _safe_int(meta.get('tvdb_id')) != 0:
                 console.print(f"[bold]TVDB:[/bold] https://www.thetvdb.com/?id={meta['tvdb_id']}&tab=series")
-            if int(meta.get('tvmaze_id') or 0) != 0:
+            if _safe_int(meta.get('tvmaze_id')) != 0:
                 console.print(f"[bold]TVMaze:[/bold] https://www.tvmaze.com/shows/{meta['tvmaze_id']}")
-            if int(meta.get('mal_id') or 0) != 0:
+            if _safe_int(meta.get('mal_id')) != 0:
                 console.print(f"[bold]MAL:[/bold] https://myanimelist.net/anime/{meta['mal_id']}")
+            if meta.get('discogs_id'):
+                console.print(f"[bold]Discogs:[/bold] https://www.discogs.com/release/{meta['discogs_id']}")
         console.print()
         if not meta.get('emby', False):
-            if int(meta.get('freeleech', 0)) != 0:
+            if _safe_int(meta.get('freeleech', 0)) != 0:
                 console.print(f"[bold]Freeleech:[/bold] {meta['freeleech']}")
 
             info_parts: list[str] = []
-            info_parts.append(str(meta['source'] if meta['is_disc'] == 'DVD' else meta['resolution']))
-            info_parts.append(str(meta['type']))
+            info_parts.append(str(meta.get('source', '') if meta.get('is_disc') == 'DVD' else meta.get('resolution', 'other')))
+            info_parts.append(str(meta.get('type', 'other')))
             if meta.get('tag', ''):
                 info_parts.append(str(meta['tag'])[1:])
             if meta.get('region', ''):
