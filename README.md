@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.4.5_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.4.6_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,13 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.5 (Trenutna Verzija)
+### v1.4.6 (Trenutna Verzija)
+* **Fix - Anoniman Upload (`--anon`):** Ispravljeno slanje zastavice za anonimni upload iz Tauri mosta (`--anon` umjesto jedne crtice `-anon`), a u Python parser dodan alias `-anon` radi potpune otpornosti.
+* **Fix - Zadrži Mapu (`keepFolder: false`):** Zadani odabir za čuvanje mape foldera vraćen je na `false` po defaultu kako se struktura torenta ne bi nepotrebno opterećivala folderom kod pojedinačnih video datoteka. Uklonjen dupli `-kf` u Rust argumentima.
+* **Fix - Čišćenje Keša i Zaostalih Privremenih Podataka:** U `start_upload` i `dry_run_upload` osigurano čišćenje privremenih mapa i `meta.json` prije svake analize i uploada kako se stari ili pogrešni metapodaci ne bi stopili u novi upload.
+* **Fix - Prepoznavanje Filmova i Automatski Naziv (`The African Queen (1951)`):** Uklonjeno prisilno slanje sirovog imena foldera kao `-name` parametra na tracker. Vraćeno automatsko generiranje scene naziva torenta po specifikacijama trackera ako korisnik ostavi polje za ručni naziv praznim. Proširena lista video formata u `video.py` s `.avi`, `.m2ts`, `.wmv` i dodana podrška za prepoznavanje naslova sa zagradama i godinom.
+
+### v1.4.5
 * **Fix - Cross-seed i Torf Kompatibilnost (`creation_date: not bytes`):** Riješena greška `Cross-seed handling failed for THR: Must be None, int or datetime object, not bytes: b'1775559027'`. UNIT3D tracker u preuzetom `.torrent` fajlu šalje `creation date` kao byte string umjesto cjelobrojnog broja. Implementiran je automatski patch za `torf` biblioteku koji sigurno pretvara byte stringove u Unix timestamp, omogućujući nesmetano automatsko ubacivanje torenta u klijent (cross-seed).
 
 ### v1.4.4

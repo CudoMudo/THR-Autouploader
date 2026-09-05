@@ -496,6 +496,15 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                 except (TypeError, ValueError):
                     pass
         print(json.dumps({"dry_run_metadata": safe_meta}))
+        try:
+            tmp_uuid = str(meta.get('uuid', ''))
+            base_d = str(meta.get('base_dir', ''))
+            if tmp_uuid and base_d:
+                tmp_dir = os.path.join(base_d, "tmp", tmp_uuid)
+                if os.path.exists(tmp_dir):
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
         return
 
 

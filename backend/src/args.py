@@ -160,7 +160,7 @@ class Args:
         parser.add_argument('-kf', '--keep-folder', action='store_true', required=False, help="Keep the folder containing the single file. Works only when supplying a directory as input. For uploads with poor filenames, like some scene.")
         parser.add_argument('-knfo', '--keep-nfo', action='store_true', required=False, help="For specific trackers only, allows to keep nfo files. With single files, must be used in conjuction with --keep-folder to find the nfo in the same folder as the file.", dest="keep_nfo")
         parser.add_argument('-reg', '--region', nargs=1, required=False, help="Region for discs")
-        parser.add_argument('-a', '--anon', action='store_true', required=False, help="Upload anonymously")
+        parser.add_argument('-a', '--anon', '-anon', action='store_true', required=False, help="Upload anonymously")
         parser.add_argument('--meta-only', action='store_true', help='Perform a metadata-only run and output JSON (for GUI auto-detect).')
         parser.add_argument('-st', '--stream', action='store_true', required=False, help="Stream Optimized Upload")
         parser.add_argument('-webdv', '--webdv', action='store_true', required=False, help="Contains a Dolby Vision layer converted using dovi_tool (HYBRID)")
@@ -495,9 +495,6 @@ class Args:
                 sys.exit(1)
         else:
             meta['manual_frames'] = None
-
-        from src.console import console
-        console.print(f"[bold red]DEBUG: parse() returning meta['dupe'] = {meta.get('dupe')}[/bold red]")
 
         return meta, parser, before_args
 

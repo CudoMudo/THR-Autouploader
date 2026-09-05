@@ -476,7 +476,7 @@ class Prep:
                         try:
                             meta['search_year'] = guessit_fn(video)['year']
                         except Exception:
-                            meta['search_year'] = ""
+                            meta['search_year'] = meta.get('year') or extracted_year or ""
 
                         if not meta.get('edit', False):
                             mi = await exportInfo(videopath, meta['isdir'], meta['uuid'], base_dir, is_dvd=meta.get('is_disc', False), debug=meta.get('debug', False))

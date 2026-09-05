@@ -157,7 +157,7 @@ class VideoManager:
             except Exception:
                 entries = []
 
-            video_exts = {'.mkv', '.mp4', '.ts'}
+            video_exts = {'.mkv', '.mp4', '.avi', '.ts', '.m2ts', '.wmv', '.vob'}
             for file in entries:
                 fname_lower = file.lower()
                 ext = os.path.splitext(file)[1].lower()

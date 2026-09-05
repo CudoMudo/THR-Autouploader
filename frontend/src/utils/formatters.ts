@@ -83,6 +83,15 @@ export function parseFolderMetadata(folderPath: string): ParsedFolderInfo {
   const yearMatch = cleanTitle.match(/\b(19\d{2}|20\d{2})\b/);
   const year = yearMatch ? yearMatch[1] : undefined;
 
+  // Clean title for bracketed years, e.g. "The African Queen (1951)" -> "The African Queen"
+  let displayTitle = cleanTitle;
+  if (year && /\(\s*(19\d{2}|20\d{2})\s*\)/.test(cleanTitle)) {
+    const stripped = cleanTitle.replace(/\s*\(\s*(19\d{2}|20\d{2})\s*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+    if (stripped) {
+      displayTitle = stripped;
+    }
+  }
+
   // Music overrides: FLAC / MP3 on UNIT3D have no resolution and use other type
   if (category === "29" || category === "3") {
     type = "other";
@@ -90,7 +99,7 @@ export function parseFolderMetadata(folderPath: string): ParsedFolderInfo {
   }
 
   return {
-    cleanTitle,
+    cleanTitle: displayTitle,
     category,
     type,
     resolution,

@@ -11,6 +11,7 @@ export interface QueueItem {
   folderPath: string;
   folderName: string;
   cleanTitle: string;
+  manualName?: string;
   category: string;
   type: string;
   resolution: string;
@@ -226,7 +227,7 @@ function App() {
         category: finalCat,
         type: finalType,
         resolution: finalRes,
-        cleanTitle: it.cleanTitle || recognizedTitle,
+        cleanTitle: recognizedTitle || it.cleanTitle,
         coverUrl: it.coverUrl || meta.cover_url,
       }));
 
@@ -268,7 +269,8 @@ function App() {
         id: "item_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
         folderPath: normalizedPath,
         folderName: folderName,
-        cleanTitle: cleanTitle,
+        cleanTitle: parsed.cleanTitle || cleanTitle,
+        manualName: "",
         category: parsed.category || "movie",
         type: isMusic ? "other" : (parsed.type || "webdl"),
         resolution: isMusic ? "other" : (parsed.resolution || "1080p"),
@@ -278,7 +280,7 @@ function App() {
         personalRls: false,
         isAnon: false,
         skipDupeCheck: false,
-        keepFolder: true,
+        keepFolder: false,
         status: "analyzing",
         statusBadgeText: "Analiziram...",
       };
@@ -455,7 +457,7 @@ function App() {
             is_anon: item.isAnon,
             skip_dupe_check: item.skipDupeCheck,
             keep_folder: item.keepFolder,
-            manual_name: item.cleanTitle,
+            manual_name: item.manualName ? item.manualName.trim() : "",
             is_dry_run: isDryRun,
             hrvatski_titl: item.hrvatskiTitl,
             personal_release: item.personalRls,
@@ -896,12 +898,16 @@ function App() {
           <div className="editor-field" style={{ marginTop: "1rem" }}>
             <input
               type="text"
-              value={selectedItem.cleanTitle}
+              value={selectedItem.manualName ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
-                updateQueueItem(selectedItem.id, (it) => ({ ...it, cleanTitle: val }));
+                updateQueueItem(selectedItem.id, (it) => ({ ...it, manualName: val }));
               }}
-              placeholder="Ručni / Očišćeni naziv torrenta"
+              placeholder={
+                selectedItem.cleanTitle
+                  ? `Ručni naziv torrenta (Prazno = Auto: ${selectedItem.cleanTitle})`
+                  : "Ručni naziv torrenta (Opcionalno - ostavi prazno za Auto)"
+              }
               className="editor-input"
             />
           </div>

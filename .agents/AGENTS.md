@@ -66,6 +66,22 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
   - **Tauri Build Pravilo:**
     - Produkcijski `.exe` se MORA graditi pozivom `bun run tauri build --no-bundle` (ili `bun run tauri build`), a NE čistim `cargo build --release`, kako bi se frontend dist asseti ugradili u `.exe` preko `tauri.localhost` protokola umjesto dev servera `localhost:1420`.
 
+- **v1.4.6:**
+  - **Ispravak Anonimnog Uploada (`-anon` -> `--anon`):**
+    - `lib.rs`: Izmijenjeno slanje zastavice s `-anon` (jedna crtica) na `--anon` (dvije crtice).
+    - `args.py`: Dodan alias `'-anon'` uz `'-a'` i `'--anon'` za potpunu otpornost Python parsera.
+  - **Ispravak Zadanog Stanja za Zadržavanje Mape (`keepFolder` default):**
+    - `App.tsx`: Vraćeno na `keepFolder: false` po defaultu pri dodavanju novih mapa u red čekanja (sprječava neželjeno forsiranje foldera za pojedinačne video datoteke).
+    - `lib.rs`: Uklonjeno redundantno dvostruko guranje `-kf` argumenta.
+  - **Otklanjanje Zagađenja Keša i Zaostalih Privremenih Podataka:**
+    - `lib.rs`: U `start_upload` i `dry_run_upload` implementirano čišćenje specifičnog `tmp/<folder_name>` direktorija prije novog izvođenja.
+    - `upload.py`: U `meta_only` načinu rada privremeni direktorij se automatski briše po završetku generiranja metapodataka.
+  - **Poboljšano Prepoznavanje Filmova i Naziva (`The African Queen (1951)`):**
+    - `App.tsx`: Uklonjeno prisilno slanje sirovog naziva foldera kao `-name` argumenta. Uvedeno zasebno polje `manualName` koje se šalje samo ako ga je korisnik eksplicitno upisao, čime se Pythonu vraća mogućnost automatskog generiranja točnog naziva torenta prema standardima trackera.
+    - `video.py`: Proširena lista video ekstenzija u `get_video` s `.avi`, `.m2ts`, `.wmv`, `.vob`.
+    - `prep.py`: Osigurano da `search_year` preuzima godinu iz naziva foldera ako sama video datoteka nema godinu u imenu.
+    - `formatters.ts`: Inteligentno čišćenje zagrada s godinom iz naslova za pretragu.
+
 - **v1.4.5:**
   - **Ispravak Cross-seeda i Torf Parsiranja (`creation_date: not bytes`):**
     - `torrentcreate.py`, `upload.py`, `clients.py`: Implementiran `patch_torf()` koji presreće `torf.Torrent.creation_date.setter`. Budući da UNIT3D (TorrentHR) pri preuzimanju generira torrent u kojem je polje `creation date` bencoded kao string/bytes (`b'1775559027'`) a ne integer, originalni `torf` je bacao `ValueError: Must be None, int or datetime object, not bytes`. Patch automatski dekodira bytes u int timestamp i omogućuje glatko automatsko ubacivanje torenta u klijent.

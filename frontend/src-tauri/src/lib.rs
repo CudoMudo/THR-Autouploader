@@ -273,12 +273,8 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         "-ua".to_string(), // Ensure unattended mode so it doesn't prompt for input
     ];
 
-    if payload.keep_folder {
-        args.push("-kf".to_string());
-    }
-
     if payload.is_anon {
-        args.push("-anon".to_string());
+        args.push("--anon".to_string());
     }
 
     if payload.hrvatski_titl {
@@ -340,9 +336,10 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         args.push(payload.resolution.clone());
     }
 
-    if !payload.manual_name.is_empty() {
+    let trimmed_name = payload.manual_name.trim();
+    if !trimmed_name.is_empty() {
         args.push("-name".to_string());
-        args.push(payload.manual_name.clone());
+        args.push(trimmed_name.to_string());
     }
 
     if payload.is_dry_run {
@@ -363,6 +360,18 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
     }
 
     let backend_dir = get_backend_dir();
+
+    // Clean up any stale temp files from previous runs for this item
+    let folder_name = std::path::Path::new(&payload.folder_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
+    if !folder_name.is_empty() {
+        let tmp_item_dir = backend_dir.join("tmp").join(folder_name);
+        if tmp_item_dir.exists() {
+            let _ = std::fs::remove_dir_all(&tmp_item_dir);
+        }
+    }
 
     // Custom description file passing
     if let Some(desc) = &payload.custom_description {
@@ -524,6 +533,18 @@ async fn dry_run_upload(
     ];
 
     let backend_dir = get_backend_dir();
+
+    // Clean up any stale temp files before analyzing
+    let folder_name = std::path::Path::new(&folder_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
+    if !folder_name.is_empty() {
+        let tmp_item_dir = backend_dir.join("tmp").join(folder_name);
+        if tmp_item_dir.exists() {
+            let _ = std::fs::remove_dir_all(&tmp_item_dir);
+        }
+    }
 
     let config_path = backend_dir.join("data").join("config.py");
     let template_path = backend_dir.join("data").join("templates").join("config.py");
