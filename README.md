@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.4.1_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.4.2_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,13 +60,16 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.1 (Trenutna Verzija)
+### v1.4.2 (Trenutna Verzija)
+* **Fix - Siguran Prikaz Metapodataka (`KeyError: 'overview'`):** U `uphelper.py` implementiran siguran pristup za polja `overview`, `genres` i sve numeričke ID-eve (`_safe_int`), rješavajući pucanje skripte kod prikaza potvrde uploada glazbe.
+* **Fix - Preskakanje Glazbe na Trackeru:** U `trackerstatus.py` uvjet `needs_imdb` ograničen isključivo na filmove i serije, čime je spriječeno neželjeno preskakanje uploada glazbe na THR u unattended modu (`skipped = True`).
+* **Fix - Ispravan Tip za Glazbu na THR:** U `trackers/THR.py` mapiran `type_id` za "Ostalo" na ID `8` umjesto nepostojećeg `0` (rješava UNIT3D grešku *"Odabrano polje type id nije ispravno"*). Fallback rezolucije postavljen na `'10'`.
+* **Fix - Čist Opis Glazbenih Torrenata:** U `get_desc.py` isključena generacija screenshot blokova za glazbu (`multi_screens = 0`), eliminirajući nehotično ubacivanje naziva prve pjesme u opis torenta.
+* **Fix - Zaobilaženje Validacije MediaInfo:** U `prep.py` inicijalizirani defaulti za glazbu i zaobiđena nepotrebna validacija video streamova.
+
+### v1.4.1
 * **Feature - Discogs Integracija za Glazbu:** Novi modul `backend/src/discogs.py` automatski prepoznaje glazbena izdanja (izvođač, album, godina, izdavač, kataloški broj) iz naziva foldera i pretražuje javni Discogs API. Podržan je i ručni unos Discogs ID-a ili punog URL-a u sučelju.
 * **Feature - Preuzimanje Cover Arta za Glazbu:** Automatsko preuzimanje i prikaz cover slike s Discogsa visoke rezolucije unutar forme i generiranih metapodataka.
-* **Fix - Siguran Prikaz Metapodataka (`KeyError: 'overview'`):** U `uphelper.py` implementiran siguran pristup za polja `overview`, `genres` i sve numeričke ID-eve, rješavajući pucanje skripte kod prikaza glazbenih informacija.
-* **Fix - Preskakanje Glazbe na Trackeru:** U `trackerstatus.py` uvjet `needs_imdb` ograničen isključivo na filmove i serije, čime je spriječeno neželjeno preskakanje uploada glazbe na THR u unattended modu.
-* **Fix - Ispravan Tip za Glazbu na THR:** U `trackers/THR.py` mapiran `type_id` za "Ostalo" na ID `8` umjesto nepostojećeg `0` (rješava API grešku *"Odabrano polje type id nije ispravno"*).
-* **Fix - Čist Opis Glazbenih Torrenata:** U `get_desc.py` isključena generacija screenshot blokova za glazbu (`multi_screens = 0`), eliminirajući nehotično ubacivanje naziva prve pjesme u opis torenta.
 * **Fix - Glazba Tip i Rezolucija u GUI:** Automatsko postavljanje tipa i rezolucije na *Ostalo (Other)* za kategorije Glazba / FLAC (29) i Glazba / MP3 (3), bez prosljeđivanja nevažećih video rezolucija na UNIT3D tracker.
 * **Fix - Otklanjanje `name 'exit' is not defined`:** Uklonjen fatalan poziv `exit()` u video skripti koji je rušio obradu audio foldera.
 * **Fix - Pouzdana Detekcija Grešaka & Status:** Backend skripta sada signalizira neuspjeh s exit kodom `1`, sprječavajući lažne "Uspjeh! Torrent je uspješno uploadan" poruke kada se dogodi pogreška.
