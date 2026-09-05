@@ -533,6 +533,25 @@ function App() {
     setIsBatchRunning(false);
   };
 
+  // Apply flags of currently selected item to all items in the queue
+  const handleApplyOptionsToAll = () => {
+    if (!selectedItem) return;
+    setQueue((prev) =>
+      prev.map((it) => ({
+        ...it,
+        isAnon: selectedItem.isAnon,
+        hrvatskiTitl: selectedItem.hrvatskiTitl,
+        personalRls: selectedItem.personalRls,
+        skipDupeCheck: selectedItem.skipDupeCheck,
+        keepFolder: selectedItem.keepFolder,
+      }))
+    );
+    setLogs((prev) => [
+      ...prev,
+      `[SISTEM] Opcije (Anon: ${selectedItem.isAnon ? "DA" : "NE"}, HR titl: ${selectedItem.hrvatskiTitl ? "DA" : "NE"}, Osobni: ${selectedItem.personalRls ? "DA" : "NE"}, Ignoriraj duplikate: ${selectedItem.skipDupeCheck ? "DA" : "NE"}, Zadrži mapu: ${selectedItem.keepFolder ? "DA" : "NE"}) primijenjene na sve stavke u redu (${queue.length}).`,
+    ]);
+  };
+
   // Ready counter
   const readyCount = queue.filter(
     (it) => it.status === "ready" || it.status === "success"
@@ -1157,6 +1176,18 @@ function App() {
               />
               <label htmlFor="keepFolderCheck">Zadrži mapu</label>
             </div>
+          </div>
+
+          <div className="flags-actions-row">
+            <button
+              type="button"
+              className="btn-apply-all-queue"
+              onClick={handleApplyOptionsToAll}
+              disabled={queue.length <= 1 || isBatchRunning}
+              title="Kopiraj uključene opcije (Anon, HR titl, Osobni RLS, Ignoriraj duplikate, Zadrži mapu) s ove stavke na sve ostale u redu čekanja"
+            >
+              📋 Primijeni ove opcije na sve u redu ({queue.length})
+            </button>
           </div>
         </div>
       )}

@@ -633,6 +633,38 @@ body {
   cursor: pointer;
 }
 
+.flags-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.85rem;
+}
+
+.btn-apply-all-queue {
+  background-color: #27272a;
+  color: #d1d5db;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #3f3f46;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-apply-all-queue:hover:not(:disabled) {
+  background-color: #3f3f46;
+  border-color: #52525b;
+  color: #ffffff;
+}
+
+.btn-apply-all-queue:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Action Buttons */
 .action-buttons-container {
   display: flex;

@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.4.6_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.4.7_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,11 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.6 (Trenutna Verzija)
+### v1.4.7 (Trenutna Verzija)
+* **Fix - IMDb API & Blu-ray.com Enkodiranje (`UnicodeDecodeError`):** Riješeno rušenje `IMDb API call failed: 'utf-8' codec can't decode byte...`. Uklonjen forsirani `Accept-Encoding: gzip, deflate, br` iz zaglavlja, čime se sprječava da serveri pošalju Brotli komprimirani sadržaj koji Python ne može dekomprimirati bez vanjske biblioteke. Uvedena sigurna obrada neočekivanih grešaka parsiranja.
+* **Feature - Gumb "Primijeni opcije na sve u redu":** U desnom panelu s opcijama (Anoniman upload, Hrvatski titl, Osobni RLS, Ignoriraj duplikate, Zadrži mapu) dodan gumb `📋 Primijeni ove opcije na sve u redu` koji omogućuje brzo i namjerno propagiranje odabranih flagova na sve stavke u queueu jednim klikom, bez narušavanja individualnih postavki različitih tipova torenta.
+
+### v1.4.6
 * **Fix - Anoniman Upload (`--anon`):** Ispravljeno slanje zastavice za anonimni upload iz Tauri mosta (`--anon` umjesto jedne crtice `-anon`), a u Python parser dodan alias `-anon` radi potpune otpornosti.
 * **Fix - Zadrži Mapu (`keepFolder: false`):** Zadani odabir za čuvanje mape foldera vraćen je na `false` po defaultu kako se struktura torenta ne bi nepotrebno opterećivala folderom kod pojedinačnih video datoteka. Uklonjen dupli `-kf` u Rust argumentima.
 * **Fix - Čišćenje Keša i Zaostalih Privremenih Podataka:** U `start_upload` i `dry_run_upload` osigurano čišćenje privremenih mapa i `meta.json` prije svake analize i uploada kako se stari ili pogrešni metapodaci ne bi stopili u novi upload.

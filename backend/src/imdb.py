@@ -28,7 +28,6 @@ IMDB_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate, br",
     "Origin": "https://www.imdb.com",
     "Referer": "https://www.imdb.com/"
 }
@@ -292,6 +291,9 @@ class ImdbManager:
                 return imdb_info
             except httpx.RequestError as e:
                 console.print(f"[red]IMDb API Network error: {e}[/red]")
+                return imdb_info
+            except Exception as e:
+                console.print(f"[red]IMDb API parsing error: {e}[/red]")
                 return imdb_info
 
         title_data = self.safe_get(data, ["data", "title"], {})
