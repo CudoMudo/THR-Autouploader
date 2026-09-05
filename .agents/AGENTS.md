@@ -66,6 +66,11 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
   - **Tauri Build Pravilo:**
     - Produkcijski `.exe` se MORA graditi pozivom `bun run tauri build --no-bundle` (ili `bun run tauri build`), a NE čistim `cargo build --release`, kako bi se frontend dist asseti ugradili u `.exe` preko `tauri.localhost` protokola umjesto dev servera `localhost:1420`.
 
+- **v1.4.4:**
+  - **Ispravak Argparse Parsinga za Screenshotove (`'creens'` error):**
+    - `lib.rs`: Izmijenjen argument za broj slika s `-screens` na `-s`. Python argparse kratku zastavicu s više slova (`-screens`) parsira kao flag `-s` s vrijednošću `'creens'`, što je rušilo `int('creens')` i posljedično ostavljalo `meta['uuid']` neinicijaliziranim.
+    - `args.py`: Dodan `-screens` kao alias uz `-s` i `--screens` radi dodatne otpornosti.
+
 - **v1.4.3:**
   - **Isključen Screenshot Upload za Glazbu (`No images uploaded` fix):**
     - `upload.py`: U `process_meta` rano se detektira `is_music_upload` te se forsira `meta['skip_imghost_upload'] = True`, `meta['screens'] = 0`, `meta['image_list'] = []`. Uvjet za slanje slika na hostove dopunjen s `not is_music_upload`.

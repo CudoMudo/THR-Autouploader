@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.4.3_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.4.4_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,10 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.3 (Trenutna Verzija)
+### v1.4.4 (Trenutna Verzija)
+* **Fix - Argument Parser za Broj Slika (`invalid literal for int(): 'creens'`):** Ispravljen argument za broj screenshotova u GUI-ju s nevažećeg `-screens` na `-s` (argparse je tumačio `-screens` kao kratku opciju `-s` s vrijednošću `'creens'`). U `args.py` dodan i `-screens` alias radi robusnosti.
+
+### v1.4.3
 * **Fix - Preskakanje Uploada Slika za Glazbu:** Riješena greška `Exception: No images uploaded. Configure additional image hosts or use a different -ih`. Za glazbena izdanja (FLAC/MP3) automatski se forsira `skip_imghost_upload = True` i `screens = 0` (kroz backend i GUI), te je ugrađen sigurnosni mehanizam u `uploadscreens.py` koji sprječava rušenje kada nema screenshotova za upload.
 
 ### v1.4.2

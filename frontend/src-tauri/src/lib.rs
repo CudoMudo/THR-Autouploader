@@ -297,7 +297,7 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
 
     if is_music {
         args.push("-siu".to_string());
-        args.push("-screens".to_string());
+        args.push("-s".to_string());
         args.push("0".to_string());
     }
 
