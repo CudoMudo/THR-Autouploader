@@ -130,7 +130,6 @@ class THR(UNIT3D):
         reverse: bool = False,
         mapping_only: bool = False,
     ) -> dict[str, str]:
-        _ = (resolution, reverse, mapping_only)
         resolution_id = {
             '8640p': '10',
             '4320p': '1',
@@ -143,10 +142,17 @@ class THR(UNIT3D):
             '576i': '7',
             '480p': '8',
             '480i': '9',
-            'OTHER': '10',
-            'OSTALO': '10',
-        }.get(str(meta.get('resolution', '')).upper(), '10')
-        return {'resolution_id': resolution_id}
+            'other': '10',
+            'ostalo': '10',
+        }
+        if mapping_only:
+            return resolution_id
+        elif reverse:
+            return {v: k for k, v in resolution_id.items()}
+
+        raw_res = str(resolution or meta.get('resolution') or '').strip().lower()
+        resolved_id = resolution_id.get(raw_res, '10')
+        return {'resolution_id': resolved_id}
 
     # If there are tracker specific checks to be done before upload, add them here
     # Is it a movie only tracker? Are concerts banned? Etc.

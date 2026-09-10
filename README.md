@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.4.7_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.4.8_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,10 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.7 (Trenutna Verzija)
+### v1.4.8 (Trenutna Verzija)
+* **Fix - Mapiranje Rezolucije na Trackeru (`1080p` umjesto "Ostalo"):** Riješen bug u `backend/src/trackers/THR.py` gdje se naziv rezolucije nepotrebno pretvarao u velika slova (`1080P`) u rječniku s malim slovima (`1080p`), zbog čega je svaka video rezolucija padala na fallback ID `10` i na TorrentHR-u završavala označena kao "Ostalo". Uvedena sigurna case-insensitive normalizacija i puna podrška za sve standardne rezolucije (1080p -> ID 3, 2160p -> ID 2, 720p -> ID 5 itd.).
+
+### v1.4.7
 * **Fix - IMDb API & Blu-ray.com Enkodiranje (`UnicodeDecodeError`):** Riješeno rušenje `IMDb API call failed: 'utf-8' codec can't decode byte...`. Uklonjen forsirani `Accept-Encoding: gzip, deflate, br` iz zaglavlja, čime se sprječava da serveri pošalju Brotli komprimirani sadržaj koji Python ne može dekomprimirati bez vanjske biblioteke. Uvedena sigurna obrada neočekivanih grešaka parsiranja.
 * **Feature - Gumb "Primijeni opcije na sve u redu":** U desnom panelu s opcijama (Anoniman upload, Hrvatski titl, Osobni RLS, Ignoriraj duplikate, Zadrži mapu) dodan gumb `📋 Primijeni ove opcije na sve u redu` koji omogućuje brzo i namjerno propagiranje odabranih flagova na sve stavke u queueu jednim klikom, bez narušavanja individualnih postavki različitih tipova torenta.
 

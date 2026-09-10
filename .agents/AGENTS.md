@@ -66,6 +66,16 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
   - **Tauri Build Pravilo:**
     - Produkcijski `.exe` se MORA graditi pozivom `bun run tauri build --no-bundle` (ili `bun run tauri build`), a NE čistim `cargo build --release`, kako bi se frontend dist asseti ugradili u `.exe` preko `tauri.localhost` protokola umjesto dev servera `localhost:1420`.
 
+- **v1.4.8:**
+  - **Ispravak Mapiranja Rezolucije na Trackeru (`1080p` -> ID 3 umjesto 'Ostalo'):**
+    - `backend/src/trackers/THR.py`: U metodi `get_resolution_id` uklonjen pogrešan `.upper()` poziv nad vrijednošću rezolucije (`1080P`) koji nije odgovarao malim slovima ključeva u rječniku (`1080p`), zbog čega je svaka rezolucija padala na fallback ID `10` ("Ostalo"). Uvedena `.strip().lower()` normalizacija i puna podrška za `mapping_only` i `reverse`.
+
+- **v1.4.7:**
+  - **Brotli Dekodiranje Fix (IMDb & Blu-ray.com):**
+    - `backend/src/imdb.py` i `backend/src/bluray_com.py`: Uklonjen `Accept-Encoding: gzip, deflate, br` kako serveri ne bi vraćali Brotli streamove koje standardni Python `httpx` bez `brotli` biblioteke ne može dekodirati (`UnicodeDecodeError`).
+  - **Batch Primjena Opcija na Red Čekanja:**
+    - `frontend/src/App.tsx` i `App.css`: Dodan gumb `📋 Primijeni ove opcije na sve u redu` za brzo kopiranje uključenih opcija (Anon, HR titl, Osobni RLS, Ignoriraj duplikate, Zadrži mapu) na sve torente u redu čekanja.
+
 - **v1.4.6:**
   - **Ispravak Anonimnog Uploada (`-anon` -> `--anon`):**
     - `lib.rs`: Izmijenjeno slanje zastavice s `-anon` (jedna crtica) na `--anon` (dvije crtice).
