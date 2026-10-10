@@ -282,7 +282,12 @@ class TmdbManager:
 
 
 async def normalize_title(title: str) -> str:
-    return title.lower().replace('&', 'and').replace('  ', ' ').strip()
+    if not title:
+        return ""
+    cleaned = title.lower().replace('&', 'and')
+    # Strip punctuation characters: colons, hyphens, dashes, periods, commas, quotes, brackets
+    cleaned = re.sub(r'[:\-–—.,!?\'"()\[\]]', ' ', cleaned)
+    return re.sub(r'\s+', ' ', cleaned).strip()
 
 
 async def get_tmdb_from_imdb(
@@ -524,6 +529,26 @@ async def get_tmdb_id(
                         secondary_norm = await normalize_title(secondary_title) if secondary_title else None
                         search_year_int = int(search_year) if search_year else 0
 
+                        def _tmdb_title_matches(t1: Optional[str], t2: Optional[str]) -> bool:
+                            if not t1 or not t2:
+                                return False
+                            if t1 == t2:
+                                return True
+                            if t1.startswith('the ') and t1[4:] == t2:
+                                return True
+                            if t2.startswith('the ') and t2[4:] == t1:
+                                return True
+                            if t1.startswith('a ') and t1[2:] == t2:
+                                return True
+                            if t2.startswith('a ') and t2[2:] == t1:
+                                return True
+                            return False
+
+                        def _tmdb_year_matches(y1: int, y2: int) -> bool:
+                            if y1 <= 0 or y2 <= 0:
+                                return False
+                            return abs(y1 - y2) <= 1
+
                         # Find all exact matches (title and year)
                         exact_matches: list[dict[str, Any]] = []
                         for r in limited_results:
@@ -536,29 +561,24 @@ async def get_tmdb_id(
                             else:
                                 original_title = await normalize_title(str(r.get('original_name', '')))
                             result_year = int((r.get('release_date') or r.get('first_air_date') or '0')[:4] or 0)
-                            # Only count as exact match if both years are present and non-zero
-                            if secondary_norm and (
-                                secondary_norm == original_title
-                                and search_year_int > 0
-                                and result_year > 0
-                                and (result_year == search_year_int or result_year == search_year_int + 1)
-                            ):
-                                exact_matches.append(r)
 
-                            if (
-                                filename_norm == result_title
-                                and search_year_int > 0
-                                and result_year > 0
-                                and (result_year == search_year_int or result_year == search_year_int + 1)
-                            ):
-                                exact_matches.append(r)
+                            match_found = False
+                            if _tmdb_title_matches(filename_norm, result_title) or _tmdb_title_matches(filename_norm, original_title):
+                                if search_year_int > 0 and result_year > 0:
+                                    if _tmdb_year_matches(search_year_int, result_year):
+                                        match_found = True
+                                elif category == "TV":
+                                    match_found = True
 
-                            if secondary_norm and (
-                                secondary_norm == result_title
-                                and search_year_int > 0
-                                and result_year > 0
-                                and (result_year == search_year_int or result_year == search_year_int + 1)
-                            ):
+                            if not match_found and secondary_norm:
+                                if _tmdb_title_matches(secondary_norm, result_title) or _tmdb_title_matches(secondary_norm, original_title):
+                                    if search_year_int > 0 and result_year > 0:
+                                        if _tmdb_year_matches(search_year_int, result_year):
+                                            match_found = True
+                                    elif category == "TV":
+                                        match_found = True
+
+                            if match_found:
                                 exact_matches.append(r)
 
                         summary_exact_matches: set[int] = {

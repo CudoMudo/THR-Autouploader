@@ -68,7 +68,7 @@ export function parseFolderMetadata(folderPath: string): ParsedFolderInfo {
     category = "29"; // Glazba / FLAC
   } else if (lower.includes("mp3") || lower.includes("album") || lower.includes("discography") || lower.includes("ost")) {
     category = "3"; // Glazba / MP3
-  } else if (lower.includes("fitgirl") || lower.includes("dodi") || lower.includes("elamigos") || lower.includes("repack") && !type) {
+  } else if (!type && !resolution && (lower.includes("fitgirl") || lower.includes("dodi") || lower.includes("elamigos") || lower.includes("razor1911") || lower.includes("skidrow") || lower.includes("codex") || lower.includes("pc game"))) {
     category = "5"; // Igre / PC
   } else if (lower.includes("docu") || lower.includes("documentary")) {
     category = "12"; // Dokumentarci

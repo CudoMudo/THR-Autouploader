@@ -1911,6 +1911,7 @@ async def do_the_thing(base_dir: str) -> None:
             meta = await Redaction.clean_meta_for_export(meta)
         console.print(traceback.format_exc())
         cleanup_manager.reset_terminal()
+        sys.exit(1)
 
     finally:
         if bot is not None:

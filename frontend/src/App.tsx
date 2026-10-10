@@ -28,6 +28,11 @@ export interface QueueItem {
   validationData?: any;
 }
 
+const isMovieOrTvCategory = (cat: string): boolean => {
+  const c = (cat || "").toLowerCase();
+  return ["movie", "tv", "17", "4", "14", "40", "34", "7"].includes(c);
+};
+
 function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [manualPathInput, setManualPathInput] = useState("");
@@ -65,7 +70,7 @@ function App() {
     "[SISTEM] Aplikacija uspješno pokrenuta. Sve opcije su dostupne kroz GUI.",
     "Čekam unos mape..."
   ]);
-  const logEndRef = useRef<HTMLDivElement>(null);
+  const terminalLogRef = useRef<HTMLDivElement>(null);
 
   // Helper to update specific item in queue
   const updateQueueItem = (id: string, updater: (item: QueueItem) => QueueItem) => {
@@ -174,7 +179,9 @@ function App() {
   }, []);
 
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (terminalLogRef.current) {
+      terminalLogRef.current.scrollTop = terminalLogRef.current.scrollHeight;
+    }
   }, [logs]);
 
   // Analyze an individual item via dry-run metadata
@@ -209,8 +216,11 @@ function App() {
       const finalRes = isMusic ? "other" : (recognizedRes || item.resolution);
       const finalType = isMusic ? "other" : (recognizedType || item.type);
 
+      const isMovieOrTv = isMovieOrTvCategory(finalCat);
       let badgeText = "Spremno";
-      if (recognizedTitle) {
+      if (isMovieOrTv && !detectedId) {
+        badgeText = "⚠️ Unesi TMDb ID";
+      } else if (recognizedTitle) {
         if (isMusic) {
           badgeText = `${recognizedTitle} (${finalCat === "3" ? "MP3" : "FLAC"})`;
         } else {
@@ -561,7 +571,10 @@ function App() {
     return (
       <div className="container">
         <header className="header">
-          <h1>⚙️ Postavke</h1>
+          <h1>
+            <span>⚙️ Postavke</span>
+            <span className="app-version-badge">v1.4.9</span>
+          </h1>
           <p className="subtitle">Unesi API ključeve i podatke svog Seedboxa</p>
         </header>
 
@@ -765,7 +778,10 @@ function App() {
       </button>
 
       <header className="header">
-        <h1>THR Autouploader</h1>
+        <h1>
+          <span>THR Autouploader</span>
+          <span className="app-version-badge">v1.4.9</span>
+        </h1>
         <p className="subtitle">Sve opcije na dlanu, bez terminala</p>
       </header>
 
@@ -859,7 +875,11 @@ function App() {
                       <div className="queue-item-meta">
                         <span>{item.category}</span>
                         <span>• {item.resolution}</span>
-                        {item.apiId && <span>• ID: {item.apiId}</span>}
+                        {item.apiId ? (
+                          <span>• ID: {item.apiId}</span>
+                        ) : isMovieOrTvCategory(item.category) ? (
+                          <span className="badge-missing-id">• ⚠️ Preporučeno unijeti TMDb ID</span>
+                        ) : null}
                         {item.hrvatskiTitl && (
                           <span className="badge-tag-hr">• HR Titl</span>
                         )}
@@ -871,8 +891,10 @@ function App() {
                   </div>
 
                   <div className="queue-item-right">
-                    <span className={`status-pill pill-${item.status}`}>
-                      {item.statusBadgeText || (item.status === "analyzing" ? "Analiziram..." : "Spremno")}
+                    <span className={`status-pill ${item.status === "ready" && isMovieOrTvCategory(item.category) && !item.apiId ? "pill-warning" : `pill-${item.status}`}`}>
+                      {item.status === "ready" && isMovieOrTvCategory(item.category) && !item.apiId
+                        ? (item.statusBadgeText || "⚠️ Unesi TMDb ID")
+                        : (item.statusBadgeText || (item.status === "analyzing" ? "Analiziram..." : "Spremno"))}
                     </span>
                     <button
                       className="btn-item-remove"
@@ -1068,22 +1090,39 @@ function App() {
 
           {/* API ID Input */}
           <div className="api-id-row">
-            <input
-              type="text"
-              value={selectedItem.apiId}
-              onChange={(e) => {
-                const val = e.target.value;
-                updateQueueItem(selectedItem.id, (it) => ({ ...it, apiId: val }));
-              }}
-              placeholder={
-                selectedItem.category === "29" || selectedItem.category === "3" || selectedItem.category === "music"
-                  ? "Discogs ID ili link (npr. 33441884 ili https://www.discogs.com/release/...)"
-                  : selectedItem.category === "5" || selectedItem.category === "game"
-                  ? "IGDB ID ili link - Opcionalno"
-                  : "API ID (TMDb / IMDb) - Opcionalno"
-              }
-              className="api-id-input"
-            />
+            <div style={{ width: "100%", maxWidth: "420px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <input
+                type="text"
+                value={selectedItem.apiId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateQueueItem(selectedItem.id, (it) => ({
+                    ...it,
+                    apiId: val,
+                    statusBadgeText: isMovieOrTvCategory(it.category) && !val.trim()
+                      ? "⚠️ Unesi TMDb ID"
+                      : (it.cleanTitle ? `${it.cleanTitle} (${it.resolution || "HD"})` : "Spremno")
+                  }));
+                }}
+                placeholder={
+                  selectedItem.category === "29" || selectedItem.category === "3" || selectedItem.category === "music"
+                    ? "Discogs ID ili link (npr. 33441884 ili https://www.discogs.com/release/...)"
+                    : selectedItem.category === "11" || selectedItem.category === "concert"
+                    ? "Discogs / TMDb / IMDb ID ili link - Opcionalno"
+                    : selectedItem.category === "5" || selectedItem.category === "game"
+                    ? "IGDB ID ili link - Opcionalno"
+                    : isMovieOrTvCategory(selectedItem.category) && !selectedItem.apiId
+                    ? "⚠️ Preporučeno unijeti TMDb ID ili IMDb link"
+                    : "API ID (TMDb / IMDb) - Opcionalno"
+                }
+                className={`api-id-input ${isMovieOrTvCategory(selectedItem.category) && !selectedItem.apiId ? "api-id-missing" : ""}`}
+              />
+              {isMovieOrTvCategory(selectedItem.category) && !selectedItem.apiId && (
+                <span className="api-id-hint-warning">
+                  ⚠️ TMDb ID nije automatski pronađen. Preporučujemo ručni unos prije uploada.
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Prepoznato Box */}
@@ -1095,6 +1134,8 @@ function App() {
               <p className="recognized-sub">
                 {selectedItem.category === "29" || selectedItem.category === "3"
                   ? `Kategorija: ${selectedItem.category === "3" ? "GLAZBA (MP3)" : "GLAZBA (FLAC)"} | Baza: Discogs (${selectedItem.apiId || "Auto"})`
+                  : selectedItem.category === "11"
+                  ? `Kategorija: KONCERTI / SPOTOVI | Baza: ${selectedItem.apiId ? "Uneseno" : "Opcionalno"}`
                   : `Kategorija: ${selectedItem.category.toUpperCase()} | Rezolucija: ${selectedItem.resolution}`
                 }
               </p>
@@ -1224,7 +1265,7 @@ function App() {
       </div>
 
       {/* Terminal Logs */}
-      <div className="terminal-log">
+      <div className="terminal-log" ref={terminalLogRef}>
         {logs.map((log, index) => (
           <div
             key={index}
@@ -1241,7 +1282,6 @@ function App() {
             {log}
           </div>
         ))}
-        <div ref={logEndRef} />
       </div>
 
       <div className="status-bar">

@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.4.8_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.4.9_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,20 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.8 (Trenutna Verzija)
+### v1.4.9 (Trenutna Verzija)
+* **Fix - Izolacija Auto-Scrolla Logova (Frontend):** Uklonjen globalni `scrollIntoView` poziv koji je pri svakom pristiglom retku loga prisilno bacao cijeli prozor aplikacije (red čekanja i formu) na samo dno. Auto-scroll je sada strogo vezan za unutarnji scrollbar terminala (`scrollTop`), čime glavni prozor ostaje potpuno miran.
+* **Fix - Normalizacija Naslova u TMDb Pretrazi (Punctuation & "The" prefix):** `normalize_title` sada automatski čisti interpunkcijske znakove (dvotočke `:`, crtice `-`, navodnike, točke) i višestruke razmake. Dodano prepoznavanje prefiksa `"The "` / `"A "` i tolerancija godine (±1). Naslovi poput `Ice Road: Vengeance` (2025) sada se odmah 100% podudaraju s TMDb bazom bez potrebe za ručnim unosom.
+* **Feature - Vizualna Sugestija za TMDb ID (Frontend):** Ako automatika za film ili seriju ne pronađe TMDb ID, stavka dobiva žutu značku `⚠️ Unesi TMDb ID`, meta oznaku `• ⚠️ Preporučeno unijeti TMDb ID`, a polje za unos u editoru je vizualno istaknuto žutim obrubom i korisnim savjetom. Unos nije kruto blokirajući, čime se zadržava puna sloboda i za kategorije koje ne ovise o TMDb-u.
+* **Fix - Revizija Cjevovoda za Glazbu i Koncerte (Discogs, get_name & THR):**
+  - U `get_name.py` dodana grana za kategorije `MUSIC` i `CONCERT` (kao i generički fallback), čime je riješen kritični bug gdje je naziv torenta ostajao prazan string.
+  - U `trackers/THR.py` uvedena zaštita točaka i izvornih naziva za Glazbu (FLAC 29, MP3 3), Koncerte (11) i aplikacije/igre, sprječavajući neželjeno brisanje točaka u nazivima izvođača i albuma (npr. `Dr. Dre`, `Vol. 1`).
+  - U `discogs.py` integrirano čitanje opcionalnog `DISCOGS_TOKEN` za veći API limit i prošireno usmjeravanje Discogs linkova i za kategoriju koncerata.
+* **Fix - Lažno Prepoznavanje Igara za Video Repackove (Kategorija: GAME):** Riješen uzrok zbog kojeg je filmski ili serijski REPACK (npr. *Ice Road Vengeance... REPACK UHD BluRay 2160p...*) bio automatski svrstan u kategoriju PC igara (`GAME`) i tražio IGDB ID. Uklonjen je `\bRepack\b` iz regex uzoraka za igre u backendu (`prep.py`) i frontendu (`formatters.ts`), a dodana je prethodna provjera video oznaka (`UHD`, `BluRay`, `2160p`, `REMUX` itd.) i stvarnih video datoteka na disku.
+* **Feature - Prikaz Verzije u Headeru Aplikacije:** U glavni header aplikacije i zaglavlje postavki dodana je diskretna plava značka s brojem verzije (`v1.4.9`).
+* **Fix - KeyError 'title' & Fallback Metapodataka (Backend):** U `uphelper.py` i `prep.py` implementirano sigurno čitanje `title` i `year` uz fallback na očišćeni naziv datoteke ili foldera, eliminirajući fatalno rušenje kada video nema pronađene podatke u bazi.
+* **Fix - Eliminacija Lažnog Uspjeha (False Positive):** U `upload.py` dodan `sys.exit(1)` u korijenski `except Exception` blok, osiguravajući da se pri svakoj neočekivanoj greški u GUI-ju točno registrira status neuspjeha (`✕ Greška`) umjesto lažne zelene poruke o uspjehu.
+
+### v1.4.8
 * **Fix - Mapiranje Rezolucije na Trackeru (`1080p` umjesto "Ostalo"):** Riješen bug u `backend/src/trackers/THR.py` gdje se naziv rezolucije nepotrebno pretvarao u velika slova (`1080P`) u rječniku s malim slovima (`1080p`), zbog čega je svaka video rezolucija padala na fallback ID `10` i na TorrentHR-u završavala označena kao "Ostalo". Uvedena sigurna case-insensitive normalizacija i puna podrška za sve standardne rezolucije (1080p -> ID 3, 2160p -> ID 2, 720p -> ID 5 itd.).
 
 ### v1.4.7

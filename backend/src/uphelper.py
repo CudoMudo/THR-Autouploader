@@ -312,7 +312,10 @@ class UploadHelper:
             console.print(f"Prep material saved to {meta['base_dir']}/tmp/{meta['uuid']}")
         console.print()
         console.print("[bold yellow]Database Info[/bold yellow]")
-        console.print(f"[bold]Title:[/bold] {meta['title']} ({meta['year']})")
+        title = meta.get('title') or meta.get('name') or meta.get('clean_name') or 'Nepoznato'
+        year = meta.get('year') or meta.get('search_year') or ''
+        year_str = f" ({year})" if year else ""
+        console.print(f"[bold]Title:[/bold] {title}{year_str}")
         console.print()
         if not meta.get('emby', False):
             if meta.get('overview'):

@@ -26,6 +26,20 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
 
 
 **LOG RADOVA / CHANGELOG (Za Agente):**
+- **v1.4.9:**
+  - **Izolacija Auto-Scrolla Logova (Frontend):** Uklonjen `scrollIntoView` koji je bacao cijeli prozor aplikacije na dno; auto-scroll je vezan isključivo za unutarnji scrollbar terminala (`terminalLogRef.current.scrollTop = terminalLogRef.current.scrollHeight`).
+  - **TMDb Title Matching & Normalizacija:** U `tmdb.py` `normalize_title` čisti interpunkcije (`:`, `-`, `,`, `.`) i višestruke razmake. Dodano prepoznavanje prefiksa `"The "` / `"A "` i tolerancija godine (±1). Naslovi poput `Ice Road: Vengeance` odmah se točno podudaraju 100%.
+  - **Vizualna Sugestija za Nedostajući TMDb ID:** Kada film/serija nema pronađen TMDb ID, GUI prikazuje žutu značku `⚠️ Unesi TMDb ID`, meta oznaku `• ⚠️ Preporučeno unijeti TMDb ID`, te žuti obrub i pomoćni savjet u editoru. Nije kruto blokirajući za druge kategorije (glazba, koncerti, aplikacije, igre).
+  - **Revizija i Stabilizacija Cjevovoda za Glazbu & Koncerte:**
+    - `get_name.py`: Dodana grana za `MUSIC` i `CONCERT` (te generički fallback), popravljen bug gdje je naziv ostajao prazan string.
+    - `trackers/THR.py`: Zaštita izvornih naziva i točaka za Glazbu (29, 3), Koncerte (11), Igre i Aplikacije u `get_name` (očuvano npr. `Dr. Dre`, `Vol. 1`).
+    - `discogs.py`: Dodan `_get_headers()` s opcionalnim `DISCOGS_TOKEN`.
+    - `lib.rs`: Prošireno automatsko usmjeravanje Discogs linkova i za kategoriju koncerata.
+  - **Fix - Lažno Prepoznavanje Igara za Video Repackove (Kategorija: GAME):** Uklonjen `\bRepack\b` iz regex uzoraka za igre u `backend/src/prep.py` i `frontend/src/utils/formatters.ts`. Dodana prioritizacija video oznaka (`UHD`, `BluRay`, `2160p`, `REMUX` itd.) i stvarnih video datoteka na disku, čime se eliminira situacija gdje je filmski ili serijski REPACK bio pogrešno označen kao PC igra i tražio IGDB ID.
+  - **Feature - Prikaz Verzije u Headeru Aplikacije:** U glavni header aplikacije i zaglavlje postavki dodana je diskretna plava značka s brojem verzije (`v1.4.9`).
+  - **KeyError 'title' & Siguran Fallback Metapodataka:** U `uphelper.py` i `prep.py` implementiran fallback na očišćeni naziv datoteke/foldera kada podaci u bazi nisu pronađeni.
+  - **Eliminacija Lažnog Uspjeha:** U `upload.py` dodan `sys.exit(1)` u root `except Exception` blok.
+
 - **v1.3.7:**
   - `NoneType object has no attribute closed` error: Riješen problem gdje se pri završetku rada (bez konzole iz GUI-ja) rušio PyInstaller jer je pokušavao ugasiti prazne (None) terminal streamove (`sys.stdin`, `stdout`, `stderr`).
   - `IMDb API 403 Forbidden`: Riješen problem s dohvaćanjem podataka s IMDb GraphQL API-ja dodavanjem potrebnih HTTP zaglavlja.
@@ -65,6 +79,16 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
     - Prošireno mapiranje kategorija: Glazba/FLAC (29), Glazba/MP3 (3), Igre/PC (5), Aplikacije (1), E-books (25), Stripovi (30), Koncerti (11).
   - **Tauri Build Pravilo:**
     - Produkcijski `.exe` se MORA graditi pozivom `bun run tauri build --no-bundle` (ili `bun run tauri build`), a NE čistim `cargo build --release`, kako bi se frontend dist asseti ugradili u `.exe` preko `tauri.localhost` protokola umjesto dev servera `localhost:1420`.
+
+- **v1.4.9:**
+  - **Izolacija Auto-Scrolla Logova (Frontend):**
+    - `frontend/src/App.tsx`: Uklonjen `logEndRef.current?.scrollIntoView({ behavior: "smooth" })` koji je pri svakom pristiglom retku loga prisilno bacao prozor cijele aplikacije na dno i kidao pregled reda čekanja. Uveden `terminalLogRef` izravno na `.terminal-log` kontejner koji ažurira `scrollTop = scrollHeight`, izolirajući skrolanje isključivo na unutarnji prozorčić logova dok viewport aplikacije ostaje nepomičan.
+  - **Ispravak KeyError 'title' & Fallback Metapodataka (Backend):**
+    - `backend/src/uphelper.py`: U `get_confirmation` zamijenjen sirovi `meta['title']` i `meta['year']` sa sigurnim fallbackom (`title = meta.get('title') or meta.get('name') or meta.get('clean_name') or 'Nepoznato'`, `year = meta.get('year') or meta.get('search_year') or ''`), sprečavajući rušenje kada film nema pronađene podatke u bazi.
+  - **Validacija Nedostajućih TMDb/IMDb ID-eva:**
+    - `backend/src/prep.py`: Ugrađeno rano prekidanje (`sys.exit(1)`) uz jasan ispis greške ako za film ili seriju automatika ne pronađe niti TMDb niti IMDb ID, dajući korisniku uputu da unese ID ručno u polje forme umjesto nastavka u prazno.
+  - **Otklanjanje Lažnog Uspjeha (False Positive):**
+    - `backend/upload.py`: U korijenski `except Exception as e:` dodan `sys.exit(1)` kako bi proces vratio error kod, a Tauri frontend točno registrirao grešku (`✕ Greška`) umjesto prikaza lažne zelene poruke o uspjehu.
 
 - **v1.4.8:**
   - **Ispravak Mapiranja Rezolucije na Trackeru (`1080p` -> ID 3 umjesto 'Ostalo'):**

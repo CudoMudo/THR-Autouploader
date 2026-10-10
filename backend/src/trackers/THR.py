@@ -204,6 +204,10 @@ class THR(UNIT3D):
     # If the tracker has specific naming conventions, add them here; otherwise, remove this function
     async def get_name(self, meta: Meta) -> dict[str, str]:
         raw_name = meta.get('manual_name') or meta.get('name') or ''
+        raw_cat = str(meta.get('manual_category') or meta.get('category') or '').strip().upper()
+        # Skip dot-stripping formatting for Music, Concerts, Software, Games, Ebooks, Comics
+        if raw_cat in ('29', '3', '11', 'MUSIC', 'GLAZBA', 'CONCERT', 'KONCERTI', 'SPOTOVI', 'FLAC', 'MP3', '5', 'GAME', '1', 'APP', '25', 'EBOOK', '30', 'STRIP') or meta.get('is_audio_only'):
+            return {'name': str(raw_name).strip()}
         formatted_name = self.format_thr_name(str(raw_name))
         return {'name': formatted_name}
 

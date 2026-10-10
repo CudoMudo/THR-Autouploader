@@ -55,6 +55,22 @@ body {
   font-weight: 700;
   letter-spacing: -0.5px;
   color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.app-version-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  letter-spacing: normal;
 }
 
 .subtitle {
@@ -329,6 +345,17 @@ body {
   color: #fca5a5;
 }
 
+.pill-warning {
+  background-color: rgba(217, 119, 6, 0.25);
+  color: #fbbf24;
+  border: 1px solid #d97706;
+}
+
+.badge-missing-id {
+  color: #fbbf24;
+  font-weight: 500;
+}
+
 .btn-item-remove {
   background: transparent;
   color: #64748b;
@@ -558,6 +585,23 @@ body {
 .api-id-input:focus {
   outline: none;
   border-color: #3b82f6;
+}
+
+.api-id-input.api-id-missing {
+  border-color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.api-id-input.api-id-missing:focus {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.api-id-hint-warning {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #fbbf24;
+  text-align: center;
 }
 
 /* Recognized Box */

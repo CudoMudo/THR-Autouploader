@@ -188,6 +188,24 @@ class NameManager:
             elif type == "DVDRIP":
                 name = f"{title} {year} {alt_title} {season} {source} DVDRip {audio} {video_encode}"
                 potential_missing = []
+        elif meta.get('category') in ("MUSIC", "CONCERT", "AUDIO"):
+            title_part = str(meta.get('title') or "").strip()
+            year_part = f"({year})" if year else ""
+            fmt_part = str(meta.get('audio_format') or meta.get('format') or "").strip()
+            folder_or_file = os.path.basename(str(meta.get('path', '')))
+            if title_part:
+                parts = [title_part]
+                if year_part and year_part not in title_part:
+                    parts.append(year_part)
+                if fmt_part and fmt_part not in title_part:
+                    parts.append(fmt_part)
+                name = " ".join(p for p in parts if p)
+            else:
+                name = folder_or_file
+            potential_missing = []
+        else:
+            name = str(meta.get('title') or os.path.basename(str(meta.get('path', '')))).strip()
+            potential_missing = []
 
         try:
             name = ' '.join(name.split())
@@ -200,7 +218,10 @@ class NameManager:
 
             exit()
         name_notag = name
-        name = name_notag + tag
+        if tag and not name_notag.endswith(tag):
+            name = name_notag + tag
+        else:
+            name = name_notag
         clean_name = await self.clean_filename(name)
         return name_notag, name, clean_name, potential_missing
 

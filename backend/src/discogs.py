@@ -1,12 +1,20 @@
-# Upload Assistant - Discogs metadata searcher
 import json
+import os
 import re
 import urllib.parse
 from typing import Any, Optional
 import httpx
 from src.console import console
 
-USER_AGENT = "THR-Autouploader/1.4.8"
+USER_AGENT = "THR-Autouploader/1.4.9"
+
+
+def _get_headers() -> dict[str, str]:
+    headers = {"User-Agent": USER_AGENT}
+    token = os.environ.get("DISCOGS_TOKEN")
+    if token and token.strip():
+        headers["Authorization"] = f"Discogs token={token.strip()}"
+    return headers
 
 
 def extract_discogs_id_from_str(s: str) -> Optional[int]:
@@ -78,7 +86,7 @@ def parse_music_folder_name(folder_name: str) -> dict[str, str]:
 async def fetch_discogs_release_details(release_id: int, client: httpx.AsyncClient) -> dict[str, Any]:
     """Fetch full details for a Discogs release."""
     url = f"https://api.discogs.com/releases/{release_id}"
-    resp = await client.get(url, headers={"User-Agent": USER_AGENT})
+    resp = await client.get(url, headers=_get_headers())
     if resp.status_code != 200:
         return {}
 
@@ -133,7 +141,7 @@ async def search_discogs_metadata(folder_name: str, discogs_manual: Optional[str
             try:
                 params = {"catno": catno}
                 url = f"https://api.discogs.com/database/search?{urllib.parse.urlencode(params)}"
-                resp = await client.get(url, headers={"User-Agent": USER_AGENT})
+                resp = await client.get(url, headers=_get_headers())
                 if resp.status_code == 200:
                     results = resp.json().get("results", [])
                     if results:
@@ -165,7 +173,7 @@ async def search_discogs_metadata(folder_name: str, discogs_manual: Optional[str
                     params["artist"] = parsed["artist"]
 
                 url = f"https://api.discogs.com/database/search?{urllib.parse.urlencode(params)}"
-                resp = await client.get(url, headers={"User-Agent": USER_AGENT})
+                resp = await client.get(url, headers=_get_headers())
                 if resp.status_code == 200:
                     results = resp.json().get("results", [])
                     if results:
@@ -191,7 +199,7 @@ async def search_discogs_metadata(folder_name: str, discogs_manual: Optional[str
         clean_title = parsed.get("title") or folder_name
         try:
             url = f"https://api.discogs.com/database/search?{urllib.parse.urlencode({'q': clean_title, 'type': 'release'})}"
-            resp = await client.get(url, headers={"User-Agent": USER_AGENT})
+            resp = await client.get(url, headers=_get_headers())
             if resp.status_code == 200:
                 results = resp.json().get("results", [])
                 if results:

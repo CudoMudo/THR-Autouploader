@@ -1031,13 +1031,17 @@ class Prep:
             imdb_info = await imdb_manager.get_imdb_info_api(imdb_id_value, manual_language=meta.get('manual_language'), debug=meta.get('debug', False))
             meta['imdb_info'] = imdb_info
 
+        if not meta.get('title'):
+            meta['title'] = filename or os.path.basename(str(meta.get('path', '')))
+
+        # Warn if movie/tv has missing TMDb and IMDb ID
+        if meta.get('category') in ("MOVIE", "TV") and tmdb_id_value == 0 and imdb_id_value == 0 and not meta.get('meta_only', False):
+            console.print("[bold yellow]UPOZORENJE: Nije pronađen TMDb niti IMDb ID za ovaj video.[/bold yellow]")
+            console.print("[yellow]Preporučujemo da u aplikaciji ručno upišete TMDb ili IMDb ID prije uploada.[/yellow]")
+
         check_valid_data = meta.get('imdb_info', {}).get('title', "")
         if check_valid_data:
-            try:
-                title = meta['title'].lower().strip()
-            except KeyError:
-                console.print("[red]Title is missing from TMDB....")
-                sys.exit(1)
+            title = str(meta.get('title') or meta.get('name') or meta.get('clean_name') or filename).lower().strip()
             aka = meta.get('imdb_info', {}).get('title', "").strip().lower()
             imdb_aka = meta.get('imdb_info', {}).get('aka', "").strip().lower()
             year = str(meta.get('imdb_info', {}).get('year', ""))
@@ -1453,16 +1457,21 @@ class Prep:
                     console.print(f"[cyan]Matched Anime pattern for SubsPlease: {anime_pattern}[/cyan]")
                 return "TV"
 
+        has_video_terms = bool(
+            re.search(r'(?i)\b(?:BluRay|UHD|2160p|1080p|1080i|720p|576p|480p|REMUX|WEB-DL|WEBRip|HDTV|DVDRip|BDRip|BRRip|HEVC|AVC|DTS|TrueHD|Atmos|BDMV|VIDEO_TS)\b', path)
+            or re.search(r'(?i)\b(?:BluRay|UHD|2160p|1080p|1080i|720p|576p|480p|REMUX|WEB-DL|WEBRip|HDTV|DVDRip|BDRip|BRRip|HEVC|AVC|DTS|TrueHD|Atmos|BDMV|VIDEO_TS)\b', uuid)
+        )
+
         game_patterns = [
             r'(?i)\b(?:FitGirl|DODI|ElAmigos|RUNE|FLT|TENOKE|Razor1911|CODEX|SKIDROW|RELOADED|GOG)\b',
-            r'(?i)\bPC[-\s]?Game\b',
-            r'(?i)\bRepack\b'
+            r'(?i)\bPC[-\s]?Game\b'
         ]
-        for pattern in game_patterns:
-            if re.search(pattern, path) or re.search(pattern, uuid):
-                if meta.get('debug', False):
-                    console.print(f"[cyan]Matched GAME pattern: {pattern}[/cyan]")
-                return "GAME"
+        if not has_video_terms:
+            for pattern in game_patterns:
+                if re.search(pattern, path) or re.search(pattern, uuid):
+                    if meta.get('debug', False):
+                        console.print(f"[cyan]Matched GAME pattern: {pattern}[/cyan]")
+                    return "GAME"
 
         if os.path.exists(path):
             if os.path.isdir(path):
@@ -1472,13 +1481,16 @@ class Prep:
                 for root, _, files in os.walk(path):
                     for file in files:
                         ext = os.path.splitext(file)[1].lower()
-                        if ext in ['.flac', '.mp3', '.wav', '.m4a', '.ape']:
+                        if ext in ['.flac', '.mp3', '.wav', '.m4a', '.ape', '.alac', '.ogg']:
                             audio_count += 1
-                        elif ext in ['.mkv', '.mp4', '.avi', '.m2ts']:
+                        elif ext in ['.mkv', '.mp4', '.avi', '.m2ts', '.ts', '.vob', '.iso']:
                             video_count += 1
                         elif ext in ['.exe', '.bin']:
                             exe_count += 1
                 
+                if video_count > 0:
+                    return "MOVIE"
+
                 if audio_count > 0 and video_count == 0:
                     if meta.get('debug', False):
                         console.print(f"[cyan]Directory contains audio and no video. Classified as MUSIC.[/cyan]")
@@ -1490,7 +1502,9 @@ class Prep:
                     return "GAME"
             else:
                 ext = os.path.splitext(path)[1].lower()
-                if ext in ['.flac', '.mp3', '.wav', '.m4a', '.ape']:
+                if ext in ['.mkv', '.mp4', '.avi', '.m2ts', '.ts', '.vob', '.iso']:
+                    return "MOVIE"
+                if ext in ['.flac', '.mp3', '.wav', '.m4a', '.ape', '.alac', '.ogg']:
                     if meta.get('debug', False):
                         console.print(f"[cyan]File is audio. Classified as MUSIC.[/cyan]")
                     return "MUSIC"
