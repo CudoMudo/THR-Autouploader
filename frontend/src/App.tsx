@@ -202,19 +202,32 @@ function App() {
 
       const recognizedTitle = meta.title || item.cleanTitle;
       const recognizedRes = meta.resolution || item.resolution;
-      const recognizedCat = (meta.category || item.category || "").toLowerCase();
+      const metaCat = (meta.category || "").toLowerCase();
+      const recognizedCat = metaCat || (item.category || "").toLowerCase();
       const recognizedType = (meta.type || item.type || "").toLowerCase();
 
       let detectedId = item.apiId;
       if (meta.tmdb_id && meta.tmdb_id !== 0) detectedId = meta.tmdb_id.toString();
       else if (meta.imdb_id) detectedId = meta.imdb_id.toString();
-      else if (meta.igdb_id && meta.igdb_id !== 0) detectedId = meta.igdb_id.toString();
       else if (meta.discogs_id && meta.discogs_id !== 0) detectedId = meta.discogs_id.toString();
 
-      const isMusic = recognizedCat === "music" || recognizedCat === "29" || recognizedCat === "3" || item.category === "29" || item.category === "3";
-      const finalCat = isMusic ? (item.category === "3" ? "3" : "29") : (recognizedCat || item.category);
-      const finalRes = isMusic ? "other" : (recognizedRes || item.resolution);
-      const finalType = isMusic ? "other" : (recognizedType || item.type);
+      const isMusic =
+        metaCat === "music" ||
+        metaCat === "29" ||
+        metaCat === "3" ||
+        (!metaCat && (item.category === "29" || item.category === "3"));
+
+      const isMp3 =
+        item.category === "3" ||
+        (meta.audio && String(meta.audio).toUpperCase() === "MP3");
+
+      // Preserve specific movie/TV sub-categories (12, 18, 31, etc.) when Python returns generic MOVIE/TV
+      const keepSpecificCat = ["12", "18", "31", "11", "17", "4", "14", "40", "34", "7"].includes(item.category);
+      const finalCat = isMusic
+        ? (isMp3 ? "3" : "29")
+        : (keepSpecificCat ? item.category : (recognizedCat || item.category || "movie"));
+      const finalRes = isMusic ? "other" : (recognizedRes || item.resolution || "1080p");
+      const finalType = isMusic ? "other" : (recognizedType || item.type || "webdl");
 
       const isMovieOrTv = isMovieOrTvCategory(finalCat);
       let badgeText = "Spremno";
@@ -228,18 +241,27 @@ function App() {
         }
       }
 
-      updateQueueItem(item.id, (it) => ({
-        ...it,
-        status: "ready",
-        statusBadgeText: badgeText,
-        validationData: meta,
-        apiId: detectedId,
-        category: finalCat,
-        type: finalType,
-        resolution: finalRes,
-        cleanTitle: recognizedTitle || it.cleanTitle,
-        coverUrl: it.coverUrl || meta.cover_url,
-      }));
+      updateQueueItem(item.id, (it) => {
+        const resolvedCover = it.coverUrl || meta.cover_url;
+        let updatedDesc = it.customDescription;
+        if (isMusic && meta.cover_url && !it.coverUrl && !updatedDesc.includes("[img")) {
+          const bbcodeImg = `[img=350]${meta.cover_url}[/img]`;
+          updatedDesc = updatedDesc ? `${bbcodeImg}\n\n${updatedDesc}` : bbcodeImg;
+        }
+        return {
+          ...it,
+          status: "ready",
+          statusBadgeText: badgeText,
+          validationData: meta,
+          apiId: detectedId,
+          category: finalCat,
+          type: finalType,
+          resolution: finalRes,
+          cleanTitle: recognizedTitle || it.cleanTitle,
+          coverUrl: resolvedCover,
+          customDescription: updatedDesc,
+        };
+      });
 
       setLogs((prev) => [
         ...prev,
@@ -282,8 +304,8 @@ function App() {
         cleanTitle: parsed.cleanTitle || cleanTitle,
         manualName: "",
         category: parsed.category || "movie",
-        type: isMusic ? "other" : (parsed.type || "webdl"),
-        resolution: isMusic ? "other" : (parsed.resolution || "1080p"),
+        type: isMusic ? "other" : (parsed.type || ""),
+        resolution: isMusic ? "other" : (parsed.resolution || ""),
         apiId: "",
         customDescription: "",
         hrvatskiTitl: false,
@@ -573,7 +595,7 @@ function App() {
         <header className="header">
           <h1>
             <span>⚙️ Postavke</span>
-            <span className="app-version-badge">v1.4.9</span>
+            <span className="app-version-badge">v1.5.0</span>
           </h1>
           <p className="subtitle">Unesi API ključeve i podatke svog Seedboxa</p>
         </header>
@@ -780,7 +802,7 @@ function App() {
       <header className="header">
         <h1>
           <span>THR Autouploader</span>
-          <span className="app-version-badge">v1.4.9</span>
+          <span className="app-version-badge">v1.5.0</span>
         </h1>
         <p className="subtitle">Sve opcije na dlanu, bez terminala</p>
       </header>
@@ -874,7 +896,7 @@ function App() {
                       </div>
                       <div className="queue-item-meta">
                         <span>{item.category}</span>
-                        <span>• {item.resolution}</span>
+                        <span>• {item.resolution || "Auto"}</span>
                         {item.apiId ? (
                           <span>• ID: {item.apiId}</span>
                         ) : isMovieOrTvCategory(item.category) ? (
@@ -1003,7 +1025,17 @@ function App() {
                 <img src={selectedItem.coverUrl} alt="Cover Preview" className="cover-img-preview" />
                 <button
                   className="btn-remove-cover"
-                  onClick={() => updateQueueItem(selectedItem.id, (it) => ({ ...it, coverUrl: undefined }))}
+                  onClick={() =>
+                    updateQueueItem(selectedItem.id, (it) => {
+                      const cleanedDesc = it.coverUrl
+                        ? it.customDescription
+                            .replace(`[img=350]${it.coverUrl}[/img]`, "")
+                            .replace(`[img]${it.coverUrl}[/img]`, "")
+                            .trim()
+                        : it.customDescription;
+                      return { ...it, coverUrl: undefined, customDescription: cleanedDesc };
+                    })
+                  }
                   title="Ukloni cover"
                 >
                   ✕
@@ -1041,10 +1073,6 @@ function App() {
               <option value="7">Serije / SD (7)</option>
               <option value="29">Glazba / FLAC (29)</option>
               <option value="3">Glazba / MP3 (3)</option>
-              <option value="5">Igre / PC (5)</option>
-              <option value="1">Aplikacije (1)</option>
-              <option value="25">E-books (25)</option>
-              <option value="30">Stripovi (30)</option>
               <option value="11">Koncerti / Spotovi (11)</option>
             </select>
 
@@ -1109,8 +1137,6 @@ function App() {
                     ? "Discogs ID ili link (npr. 33441884 ili https://www.discogs.com/release/...)"
                     : selectedItem.category === "11" || selectedItem.category === "concert"
                     ? "Discogs / TMDb / IMDb ID ili link - Opcionalno"
-                    : selectedItem.category === "5" || selectedItem.category === "game"
-                    ? "IGDB ID ili link - Opcionalno"
                     : isMovieOrTvCategory(selectedItem.category) && !selectedItem.apiId
                     ? "⚠️ Preporučeno unijeti TMDb ID ili IMDb link"
                     : "API ID (TMDb / IMDb) - Opcionalno"

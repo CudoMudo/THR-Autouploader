@@ -331,21 +331,20 @@ class VideoManager:
             type = cast(str, meta.get('manual_type'))
         else:
             filename = os.path.basename(video).lower()
-            if "remux" in filename:
+            folder_name = os.path.basename(str(meta.get('path', ''))).lower() if meta.get('isdir') else ""
+            combined = f"{folder_name} {filename}"
+            if "remux" in combined:
                 type = "REMUX"
-            elif any(word in filename for word in [" web ", ".web.", "web-dl", "webdl"]):
-                type = "WEBDL"
-            elif "webrip" in filename:
+            elif "webrip" in combined or "web-rip" in combined:
                 type = "WEBRIP"
-            # elif scene == True:
-                # type = "ENCODE"
-            elif "hdtv" in filename:
+            elif any(word in combined for word in [" web ", ".web.", "web-dl", "webdl"]) or re.search(r'\bweb\b', combined):
+                type = "WEBDL"
+            elif "hdtv" in combined:
                 type = "HDTV"
             elif is_disc is not None:
                 type = "DISC"
-            elif "dvdrip" in filename:
+            elif "dvdrip" in combined or "dvd-rip" in combined:
                 type = "DVDRIP"
-                # exit()
             else:
                 type = "ENCODE"
         return type

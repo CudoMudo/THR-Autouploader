@@ -301,13 +301,14 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         if payload.tmdb_id.starts_with("tt") {
             args.push("-imdb".to_string());
             args.push(payload.tmdb_id.clone());
-        } else if payload.category == "game" || payload.category == "5" {
-            args.push("-igdb".to_string());
-            args.push(payload.tmdb_id.clone());
         } else if is_music || payload.tmdb_id.contains("discogs") {
             args.push("-discogs".to_string());
             let cleaned = if let Some(idx) = payload.tmdb_id.find("/release/") {
                 let after = &payload.tmdb_id[idx + 9..];
+                let num_str: String = after.chars().take_while(|c| c.is_ascii_digit()).collect();
+                if !num_str.is_empty() { num_str } else { payload.tmdb_id.clone() }
+            } else if let Some(idx) = payload.tmdb_id.find("/master/") {
+                let after = &payload.tmdb_id[idx + 8..];
                 let num_str: String = after.chars().take_while(|c| c.is_ascii_digit()).collect();
                 if !num_str.is_empty() { num_str } else { payload.tmdb_id.clone() }
             } else {

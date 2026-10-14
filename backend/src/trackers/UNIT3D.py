@@ -69,12 +69,17 @@ class UNIT3D:
         }
 
         category_id = str((await self.get_category_id(meta))['category_id'])
+        tmdb_val = str(meta.get('tmdb') or '0').strip()
+        search_name = ""
+        if tmdb_val in ('0', ''):
+            search_name = str(meta.get('title') or meta.get('clean_name') or '').strip()
         params_dict: dict[str, str] = {
-            "tmdbId": str(meta['tmdb']),
             "categories[]": category_id,
-            "name": "",
+            "name": search_name,
             "perPage": "100",
         }
+        if tmdb_val not in ('0', ''):
+            params_dict["tmdbId"] = tmdb_val
         params_list: Optional[ParamsList] = None
         if self.tracker not in ["OTW"]:
             resolutions = await self.get_resolution_id(meta)

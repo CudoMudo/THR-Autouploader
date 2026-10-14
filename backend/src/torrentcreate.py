@@ -196,11 +196,21 @@ class TorrentCreator:
         return piece_size
 
     @staticmethod
-    def build_mkbrr_exclude_string(root_folder: str, filelist: Sequence[str]) -> str:
-        exclude_patterns = [
-            "*.nfo", "*.jpg", "*.jpeg", "*.png", "*.m3u", "*.m3u8", "*.xml", "*sample.mkv", "!sample*.*"
-        ]
-        keep_patterns = ["*.srt", "*.sub", "*.idx", "*.vtt", "*.ass", "*.ssa", "*.txt"]
+    def build_mkbrr_exclude_string(root_folder: str, filelist: Sequence[str], is_music: bool = False) -> str:
+        if is_music:
+            exclude_patterns = [
+                "*.xml", "*sample.mkv", "!sample*.*"
+            ]
+            keep_patterns = [
+                "*.flac", "*.mp3", "*.m4a", "*.wav", "*.ape", "*.alac", "*.aac", "*.ogg",
+                "*.cue", "*.log", "*.m3u", "*.m3u8", "*.txt", "*.nfo",
+                "*.jpg", "*.jpeg", "*.png"
+            ]
+        else:
+            exclude_patterns = [
+                "*.nfo", "*.jpg", "*.jpeg", "*.png", "*.m3u", "*.m3u8", "*.xml", "*sample.mkv", "!sample*.*"
+            ]
+            keep_patterns = ["*.srt", "*.sub", "*.idx", "*.vtt", "*.ass", "*.ssa", "*.txt"]
         keep_set = {os.path.abspath(f) for f in filelist}
 
         exclude_files: set[str] = set()
@@ -209,9 +219,9 @@ class TorrentCreator:
                 full_path = os.path.abspath(os.path.join(dirpath, fname))
                 if full_path in keep_set:
                     continue
-                if any(fnmatch.fnmatch(fname, pat) for pat in keep_patterns):
+                if any(fnmatch.fnmatch(fname.lower(), pat) for pat in keep_patterns):
                     continue
-                if any(fnmatch.fnmatch(fname, pat) for pat in exclude_patterns):
+                if any(fnmatch.fnmatch(fname.lower(), pat) for pat in exclude_patterns):
                     continue
                 exclude_files.add(fname)
 
@@ -364,8 +374,9 @@ class TorrentCreator:
                             cmd.extend(["--workers", str(meta['mkbrr_threads'])])
 
                         if not meta.get('is_disc', False):
-                            exclude_str = cls.build_mkbrr_exclude_string(str(path), meta['filelist'])
-                            cmd.extend(["--exclude", exclude_str])
+                            exclude_str = cls.build_mkbrr_exclude_string(str(path), meta['filelist'], is_music=is_music)
+                            if exclude_str:
+                                cmd.extend(["--exclude", exclude_str])
 
                         cmd.extend(["-o", output_path])
                         if meta['debug']:

@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.4.9_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.5.0_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,22 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.4.9 (Trenutna Verzija)
+### v1.5.0 (Trenutna Verzija)
+* **Fix - Eliminacija Lažne Detekcije Filmova i Serija kao Glazbe (`FLAC`, `MP3`, `"ost"`):**
+  - Riješen kritični propust u `formatters.ts` gdje je sirova provjera podstringova (`lower.includes("ost")`, `lower.includes("flac")`, `lower.includes("mp3")`) pogrešno svrstavala filmove i serije s riječima poput *Ghost*, *Ghostbusters*, *Lost*, *Host*, *Boston*, *Almost* ili video izdanja s FLAC/MP3 zvukom u glazbene kategorije (`29` / `3`) i brisala im rezoluciju u `"other"`.
+  - U `App.tsx` uklonjen "lock-in" uvjet koji je zadržavao krivo pogođenu glazbenu kategoriju čak i nakon što je Python backend skeniranjem `.mkv` datoteke utvrdio da se radi o filmu ili seriji (`MOVIE` / `TV`).
+* **Fix - Točno Prepoznavanje Tipa Izdanja (`ENCODE` vs `DISC` vs `WEBDL`):**
+  - Ispravljen redoslijed provjera u `formatters.ts` zbog kojeg je svaki `BluRay x264/x265` encode bio pogrešno označen kao puni `Disc / ISO` (`Filmovi / BD`) jer se `bluray` provjeravao prije video kodeka (`x264`, `x265`, `HEVC`, `H.264`).
+  - Dodano prepoznavanje scene `.WEB.` izdanja (npr. `.WEB.H264` / `.WEB.x265`) kao `WEBDL` u frontendu i backendu (`video.py`), te provjera naziva nadređenog foldera uz naziv samog video fajla.
+  - Uvedene striktne granice riječi (`\b`) za detekciju sezona (`S01E01`, `S01`–`S99`) u `formatters.ts` i `prep.py`, čime su spriječene lažne TV detekcije kod filmova čiji naslov ili grupa sadrže slovo `s` i broj.
+* **Fix - Kompletna Nadogradnja Sustava za Glazbu (Discogs, Nazivi, Cover & `mkbrr`):**
+  - **Izvođač i format u nazivu torrenta:** `prep.py`, `discogs.py` i `get_name.py` sada čuvaju puni naziv `Izvođač - Album (Godina) [Format]` (npr. `Pink Floyd - The Dark Side of the Moon (1973) [FLAC]`) i čiste Discogs numeričke sufikse iz imena izvođača (`Artist (2)` -> `Artist`).
+  - **Automatski Cover Art u opisu:** Cover slika dohvaćena s Discogsa sada se automatski ubacuje kao `[img=350]...[/img]` u opis glazbenog torrenta.
+  - **Očuvanje omota i `.cue`/`.log`/`.nfo` u `mkbrr`:** `build_mkbrr_exclude_string` u `torrentcreate.py` više ne izbacuje `.jpg`, `.png`, `.nfo` i `.m3u` datoteke kada kreira glazbeni torrent.
+  - **UNIT3D Dupe Check po nazivu:** Kada je `tmdbId=0` (glazba i izdanja bez TMDb ID-a), `UNIT3D.py` pretražuje duplikate po nazivu izdanja umjesto dohvaćanja 100 nepovezanih torrenata.
+* **Cleanup - Uklanjanje Nepodržanih Kategorija (Igre / Aplikacije):** Iz sučelja i parsera uklonjene su kategorije PC igara i softvera kako korisnike ne bi dovodile u zabludu, čime je fokus aplikacije 100% na podržanim Video i Audio kategorijama.
+
+### v1.4.9
 * **Fix - Izolacija Auto-Scrolla Logova (Frontend):** Uklonjen globalni `scrollIntoView` poziv koji je pri svakom pristiglom retku loga prisilno bacao cijeli prozor aplikacije (red čekanja i formu) na samo dno. Auto-scroll je sada strogo vezan za unutarnji scrollbar terminala (`scrollTop`), čime glavni prozor ostaje potpuno miran.
 * **Fix - Normalizacija Naslova u TMDb Pretrazi (Punctuation & "The" prefix):** `normalize_title` sada automatski čisti interpunkcijske znakove (dvotočke `:`, crtice `-`, navodnike, točke) i višestruke razmake. Dodano prepoznavanje prefiksa `"The "` / `"A "` i tolerancija godine (±1). Naslovi poput `Ice Road: Vengeance` (2025) sada se odmah 100% podudaraju s TMDb bazom bez potrebe za ručnim unosom.
 * **Feature - Vizualna Sugestija za TMDb ID (Frontend):** Ako automatika za film ili seriju ne pronađe TMDb ID, stavka dobiva žutu značku `⚠️ Unesi TMDb ID`, meta oznaku `• ⚠️ Preporučeno unijeti TMDb ID`, a polje za unos u editoru je vizualno istaknuto žutim obrubom i korisnim savjetom. Unos nije kruto blokirajući, čime se zadržava puna sloboda i za kategorije koje ne ovise o TMDb-u.

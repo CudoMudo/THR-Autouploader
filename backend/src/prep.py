@@ -368,7 +368,18 @@ class Prep:
                 folder_name = os.path.basename(meta['path']) if meta.get('isdir') else os.path.splitext(os.path.basename(meta['path']))[0]
                 parsed_music = parse_music_folder_name(folder_name)
 
-                meta['title'] = parsed_music.get('title') or folder_name
+                parsed_artist = (parsed_music.get('artist') or '').strip()
+                parsed_album = (parsed_music.get('title') or '').strip()
+                if parsed_artist and parsed_album and not parsed_album.lower().startswith(parsed_artist.lower()):
+                    meta['title'] = f"{parsed_artist} - {parsed_album}"
+                else:
+                    meta['title'] = parsed_album or folder_name
+
+                if parsed_music.get('format'):
+                    meta['audio_format'] = f"[{parsed_music['format']}]"
+                else:
+                    meta['audio_format'] = f"[{meta['audio']}]"
+
                 filename = meta['title']
                 untouched_filename = folder_name
                 search_term = folder_name
@@ -400,7 +411,12 @@ class Prep:
                 if discogs_data:
                     meta['discogs_id'] = discogs_data.get('discogs_id', 0)
                     if discogs_data.get('title'):
-                        meta['title'] = discogs_data['title']
+                        d_title = str(discogs_data['title']).strip()
+                        d_artist = str(discogs_data.get('artist') or parsed_artist or '').strip()
+                        if d_artist and ' - ' not in d_title and not d_title.lower().startswith(d_artist.lower()):
+                            meta['title'] = f"{d_artist} - {d_title}"
+                        else:
+                            meta['title'] = d_title
                         filename = meta['title']
                     if discogs_data.get('year') and not meta.get('year'):
                         meta['year'] = discogs_data['year']
@@ -435,7 +451,7 @@ class Prep:
                         meta['year'] = extracted_year
 
                     if meta.get('isdir', False):
-                        guess_name = os.path.basename(meta['path']).replace("_", "").replace("-", "") if meta['path'] else ""
+                        guess_name = os.path.basename(meta['path']).replace("_", " ").replace("-", " ") if meta['path'] else ""
                     else:
                         guess_name = ntpath.basename(video).replace('-', ' ')
                 except Exception as e:
@@ -1412,25 +1428,24 @@ class Prep:
                 return "TV"
             elif manual_cat_str in ('29', '3', 'MUSIC', 'GLAZBA', 'MUSIC_FLAC', 'MUSIC_MP3', 'FLAC', 'MP3'):
                 return "MUSIC"
-            elif manual_cat_str in ('5', 'GAME', 'GAMES', 'PC_GAME'):
-                return "GAME"
             # For 18 (Crtani), 12 (Dokumentarni), 31 (Anime), or other tracker categories:
             # Do NOT force a wrong internal category. Fall through to auto-detection (TV vs MOVIE)!
 
         path_patterns = [
             r'(?i)[\\/](?:tv|tvshows|tv.shows|series|shows)[\\/]',
             r'(?i)[\\/](?:season\s*\d+|s\d+)[\\/]',
-            r'(?i)[\\/](?:s\d{1,2}e\d{1,2}|s\d{1,2}|season\s*\d+)',
+            r'(?i)[\\/](?:s\d{1,2}e\d{1,2}|s\d{2}|season\s*\d+)',
             r'(?i)(?:tv pack|season\s*\d+)'
         ]
 
         filename_patterns = [
-            r'(?i)s\d{1,2}e\d{1,2}',
-            r'(?i)s\d{1,2}',
+            r'(?i)\bs\d{1,2}e\d{1,2}\b',
+            r'(?i)\bs\d{2}\b',
+            r'(?i)\bs\d{1,2}\b(?=[\s._\-\[\(]*(?:complete|pack|1080|720|2160|480|576|bluray|web|hdtv|dvd|bdrip|x264|x265|hevc|h\.?264|h\.?265))',
             r'(?i)\b\d{1,2}x\d{2}\b',
-            r'(?i)(?:season|series)\s*\d+',
-            r'(?i)e\d{2,3}\s*\-',
-            r'(?i)\d{4}\.\d{1,2}\.\d{1,2}'
+            r'(?i)\b(?:season|series)\s*\d+\b',
+            r'(?i)\be\d{2,3}\s*\-',
+            r'(?i)\b\d{4}\.\d{1,2}\.\d{1,2}\b'
         ]
 
         path = meta.get('path', '')
@@ -1457,27 +1472,10 @@ class Prep:
                     console.print(f"[cyan]Matched Anime pattern for SubsPlease: {anime_pattern}[/cyan]")
                 return "TV"
 
-        has_video_terms = bool(
-            re.search(r'(?i)\b(?:BluRay|UHD|2160p|1080p|1080i|720p|576p|480p|REMUX|WEB-DL|WEBRip|HDTV|DVDRip|BDRip|BRRip|HEVC|AVC|DTS|TrueHD|Atmos|BDMV|VIDEO_TS)\b', path)
-            or re.search(r'(?i)\b(?:BluRay|UHD|2160p|1080p|1080i|720p|576p|480p|REMUX|WEB-DL|WEBRip|HDTV|DVDRip|BDRip|BRRip|HEVC|AVC|DTS|TrueHD|Atmos|BDMV|VIDEO_TS)\b', uuid)
-        )
-
-        game_patterns = [
-            r'(?i)\b(?:FitGirl|DODI|ElAmigos|RUNE|FLT|TENOKE|Razor1911|CODEX|SKIDROW|RELOADED|GOG)\b',
-            r'(?i)\bPC[-\s]?Game\b'
-        ]
-        if not has_video_terms:
-            for pattern in game_patterns:
-                if re.search(pattern, path) or re.search(pattern, uuid):
-                    if meta.get('debug', False):
-                        console.print(f"[cyan]Matched GAME pattern: {pattern}[/cyan]")
-                    return "GAME"
-
         if os.path.exists(path):
             if os.path.isdir(path):
                 audio_count = 0
                 video_count = 0
-                exe_count = 0
                 for root, _, files in os.walk(path):
                     for file in files:
                         ext = os.path.splitext(file)[1].lower()
@@ -1485,8 +1483,6 @@ class Prep:
                             audio_count += 1
                         elif ext in ['.mkv', '.mp4', '.avi', '.m2ts', '.ts', '.vob', '.iso']:
                             video_count += 1
-                        elif ext in ['.exe', '.bin']:
-                            exe_count += 1
                 
                 if video_count > 0:
                     return "MOVIE"
@@ -1495,11 +1491,6 @@ class Prep:
                     if meta.get('debug', False):
                         console.print(f"[cyan]Directory contains audio and no video. Classified as MUSIC.[/cyan]")
                     return "MUSIC"
-                
-                if exe_count > 0 and video_count == 0 and audio_count == 0:
-                    if meta.get('debug', False):
-                        console.print(f"[cyan]Directory contains exe/bin and no media. Classified as GAME.[/cyan]")
-                    return "GAME"
             else:
                 ext = os.path.splitext(path)[1].lower()
                 if ext in ['.mkv', '.mp4', '.avi', '.m2ts', '.ts', '.vob', '.iso']:
@@ -1508,10 +1499,6 @@ class Prep:
                     if meta.get('debug', False):
                         console.print(f"[cyan]File is audio. Classified as MUSIC.[/cyan]")
                     return "MUSIC"
-                if ext == '.exe':
-                    if meta.get('debug', False):
-                        console.print(f"[cyan]File is exe. Classified as GAME.[/cyan]")
-                    return "GAME"
 
         return "MOVIE"
 

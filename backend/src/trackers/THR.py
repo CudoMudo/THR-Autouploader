@@ -62,14 +62,6 @@ class THR(UNIT3D):
             return {'category_id': '29'}
         elif raw_manual in ('3', 'MUSIC_MP3', 'MP3', 'MUSIC'):
             return {'category_id': '3'}
-        elif raw_manual in ('5', 'GAME', 'GAMES', 'PC_GAME'):
-            return {'category_id': '5'}
-        elif raw_manual in ('1', 'APP', 'APPS', 'APLIKACIJE'):
-            return {'category_id': '1'}
-        elif raw_manual in ('25', 'EBOOK', 'EBOOKS', 'E-BOOKS'):
-            return {'category_id': '25'}
-        elif raw_manual in ('30', 'STRIP', 'STRIPOVI', 'COMICS'):
-            return {'category_id': '30'}
         elif raw_manual in ('11', 'CONCERT', 'KONCERTI', 'SPOTOVI'):
             return {'category_id': '11'}
         elif raw_manual.isdigit() and int(raw_manual) > 0:
@@ -96,8 +88,6 @@ class THR(UNIT3D):
                 cat_id = '29'
             else:
                 cat_id = '3'
-        elif internal_cat == 'GAME':
-            cat_id = '5'
 
         return {'category_id': cat_id}
 
@@ -176,9 +166,9 @@ class THR(UNIT3D):
     def format_thr_name(name: str) -> str:
         if not name:
             return ""
-        # 1. Spacing before audio codecs & channels (e.g. DDP5.1 -> DDP 5.1, AAC2.0 -> AAC 2.0, DDP.5.1 -> DDP 5.1)
+        # 1. Spacing before audio codecs & channels (e.g. DDP5.1 -> DDP 5.1, AAC2.0 -> AAC 2.0, DTS-HD.MA.5.1 -> DTS-HD MA 5.1)
         s = re.sub(
-            r'\b(DDP|DD\+|DD|AAC|AC3|EAC3|DTS(?:-HD(?: MA)?)?|TrueHD|FLAC|LPCM)[.\-_]?([1-9]\.[0-2])\b',
+            r'\b(DDP|DD\+|DD|AAC|AC3|EAC3|DTS(?:-HD(?:[.\-_ ]MA)?)?|TrueHD|FLAC|LPCM)[.\-_]?([1-9]\.[0-2](?:\.[0-4])?)\b',
             r'\1 \2',
             name,
             flags=re.IGNORECASE
@@ -187,8 +177,12 @@ class THR(UNIT3D):
         # 2. Protect special tokens with dots:
         # H.264 / H.265 / x.264 / x.265
         s = re.sub(r'\b([HhXx])\.(26[45])\b', r'\1@@DOT@@\2', s)
-        # Audio channel counts (e.g. 5.1, 7.1, 2.0, 1.0, 2.1, 6.1)
-        s = re.sub(r'\b(\d)\.(\d)\b', r'\1@@DOT@@\2', s)
+        # Audio channel counts (e.g. 5.1, 7.1, 2.0, 7.1.4)
+        s = re.sub(
+            r'\b(\d)\.(\d)(?:\.(\d))?\b',
+            lambda m: f"{m.group(1)}@@DOT@@{m.group(2)}@@DOT@@{m.group(3)}" if m.group(3) else f"{m.group(1)}@@DOT@@{m.group(2)}",
+            s
+        )
         # Version strings (e.g. v1.0, v2.1)
         s = re.sub(r'\b(v\d+)\.(\d+)\b', r'\1@@DOT@@\2', s, flags=re.IGNORECASE)
         
@@ -205,8 +199,8 @@ class THR(UNIT3D):
     async def get_name(self, meta: Meta) -> dict[str, str]:
         raw_name = meta.get('manual_name') or meta.get('name') or ''
         raw_cat = str(meta.get('manual_category') or meta.get('category') or '').strip().upper()
-        # Skip dot-stripping formatting for Music, Concerts, Software, Games, Ebooks, Comics
-        if raw_cat in ('29', '3', '11', 'MUSIC', 'GLAZBA', 'CONCERT', 'KONCERTI', 'SPOTOVI', 'FLAC', 'MP3', '5', 'GAME', '1', 'APP', '25', 'EBOOK', '30', 'STRIP') or meta.get('is_audio_only'):
+        # Skip dot-stripping formatting for Music (audio releases)
+        if raw_cat in ('29', '3', 'MUSIC', 'GLAZBA', 'FLAC', 'MP3') or meta.get('is_audio_only'):
             return {'name': str(raw_name).strip()}
         formatted_name = self.format_thr_name(str(raw_name))
         return {'name': formatted_name}

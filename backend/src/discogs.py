@@ -6,7 +6,7 @@ from typing import Any, Optional
 import httpx
 from src.console import console
 
-USER_AGENT = "THR-Autouploader/1.4.9"
+USER_AGENT = "THR-Autouploader/1.5.0"
 
 
 def _get_headers() -> dict[str, str]:
@@ -99,7 +99,12 @@ async def fetch_discogs_release_details(release_id: int, client: httpx.AsyncClie
     artist_str = ""
     artists = data.get("artists", [])
     if artists:
-        artist_str = ", ".join(a.get("name", "") for a in artists if a.get("name"))
+        cleaned_artists = [
+            re.sub(r'\s*\(\d+\)$', '', a.get("name", "")).strip()
+            for a in artists
+            if a.get("name")
+        ]
+        artist_str = ", ".join(a for a in cleaned_artists if a)
 
     return {
         "discogs_id": release_id,

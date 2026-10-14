@@ -627,8 +627,13 @@ class DescriptionBuilder:
         elif meta_description:
             desc_parts.append(meta_description)
 
+        user_desc = await self.get_user_description(meta)
+        if str(meta.get("category", "")).upper() == "MUSIC" and meta.get("cover_url"):
+            if "[img" not in user_desc.lower() and "[img" not in str(meta_description).lower():
+                desc_parts.append(f"[center][img=350]{meta['cover_url']}[/img][/center]\n")
+
         # Description from file/pastebin link
-        desc_parts.append(await self.get_user_description(meta))
+        desc_parts.append(user_desc)
 
         # Menu Screenshots
         desc_parts.append(await self.menu_section(meta))

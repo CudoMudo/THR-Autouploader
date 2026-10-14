@@ -26,6 +26,20 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
 
 
 **LOG RADOVA / CHANGELOG (Za Agente):**
+- **v1.5.0:**
+  - **Eliminacija Krivih Detekcija Kategorije i Tipa (`formatters.ts`, `App.tsx`, `prep.py`, `video.py`):**
+    - U `formatters.ts` popravljen propust gdje su `lower.includes("ost")`, `lower.includes("flac")` i `lower.includes("mp3")` bez granica riječi i bez provjere video indikatora svrstavali filmove/serije (npr. *Ghost*, *Lost*, *Host*, te BluRay/Remux s FLAC zvukom) u Glazbu (`29` / `3`).
+    - U `App.tsx` (`analyzeQueueItem`) uklonjen `isMusic` lock-in koji je ignorirao Pythonovu `MOVIE`/`TV` detekciju ako je folder inicijalno pogrešno označen kao glazba; dodano očuvanje specifičnih podkategorija (`12`, `18`, `31`, `11`, itd.) i automatska detekcija `MP3` (`3`) naspram `FLAC` (`29`) preko `meta.audio`.
+    - U `formatters.ts` ispravljen redoslijed detekcije tipa tako da `BluRay x264/x265` ide u `encode` umjesto `disc`, a scene `.WEB.` ide u `webdl`. U `video.py` (`get_type`) dodana provjera naziva foldera uz naziv video datoteke.
+    - U `prep.py` (`get_cat`) i `formatters.ts` uvedene granice riječi (`\b`) za TV sezone (`S01E01`, `S01`–`S99`) i zamijenjen `.replace("-", "")` s `.replace("-", " ")` kod direktorija.
+    - U `formatters.ts` i `THR.py` proširena zaštita audio kanala (`DTS-HD.MA.5.1`, `7.1.4`).
+  - **Revizija Glazbenog Sustava (`prep.py`, `discogs.py`, `get_name.py`, `torrentcreate.py`, `get_desc.py`, `UNIT3D.py`):**
+    - Čuvanje punog naziva `Izvođač - Album` u `meta['title']` i formata (`[FLAC]` / `[MP3]` / `[WEB - FLAC]`) u `meta['audio_format']`, uz čišćenje Discogs sufiksa `(2)` s imena izvođača.
+    - Automatsko ubacivanje Discogs cover slike (`[img=350]...[/img]`) u opis glazbenog torrenta u `App.tsx` i `get_desc.py`.
+    - U `torrentcreate.py` (`build_mkbrr_exclude_string`) dodana zastavica `is_music` kako `mkbrr` ne bi brisao `.jpg`, `.png`, `.nfo`, `.cue`, `.log`, `.m3u` iz glazbenih torrenata.
+    - U `UNIT3D.py` (`search_existing`) kada je `tmdbId=0` pretražuju se duplikati po `name` parametru umjesto slanja `tmdbId=0` s praznim imenom.
+  - **Uklanjanje Igara i Softvera:** Iz `App.tsx`, `formatters.ts`, `lib.rs`, `prep.py` i `THR.py` uklonjene kategorije Igre (`5`), Aplikacije (`1`), E-books (`25`) i Stripovi (`30`).
+
 - **v1.4.9:**
   - **Izolacija Auto-Scrolla Logova (Frontend):** Uklonjen `scrollIntoView` koji je bacao cijeli prozor aplikacije na dno; auto-scroll je vezan isključivo za unutarnji scrollbar terminala (`terminalLogRef.current.scrollTop = terminalLogRef.current.scrollHeight`).
   - **TMDb Title Matching & Normalizacija:** U `tmdb.py` `normalize_title` čisti interpunkcije (`:`, `-`, `,`, `.`) i višestruke razmake. Dodano prepoznavanje prefiksa `"The "` / `"A "` i tolerancija godine (±1). Naslovi poput `Ice Road: Vengeance` odmah se točno podudaraju 100%.

@@ -5,15 +5,17 @@
 export function formatCleanTitle(name: string): string {
   if (!name) return "";
 
-  // 1. Spacing before audio codecs & channels (e.g. DDP5.1 -> DDP 5.1, AAC2.0 -> AAC 2.0)
+  // 1. Spacing before audio codecs & channels (e.g. DDP5.1 -> DDP 5.1, AAC2.0 -> AAC 2.0, DTS-HD.MA.5.1 -> DTS-HD MA 5.1)
   let s = name.replace(
-    /\b(DDP|DD\+|DD|AAC|AC3|EAC3|DTS(?:-HD(?: MA)?)?|TrueHD|FLAC|LPCM)[.\-_]?([1-9]\.[0-2])\b/gi,
+    /\b(DDP|DD\+|DD|AAC|AC3|EAC3|DTS(?:-HD(?:[.\-_ ]MA)?)?|TrueHD|FLAC|LPCM)[.\-_]?([1-9]\.[0-2](?:\.[0-4])?)\b/gi,
     "$1 $2"
   );
 
   // 2. Protect specific dots
   s = s.replace(/\b([HhXx])\.(26[45])\b/g, "$1@@DOT@@$2");
-  s = s.replace(/\b(\d)\.(\d)\b/g, "$1@@DOT@@$2");
+  s = s.replace(/\b(\d)\.(\d)(?:\.(\d))?\b/g, (_, a, b, c) =>
+    c ? `${a}@@DOT@@${b}@@DOT@@${c}` : `${a}@@DOT@@${b}`
+  );
   s = s.replace(/\b(v\d+)\.(\d+)\b/gi, "$1@@DOT@@$2");
 
   // 3. Replace remaining dots with spaces
@@ -41,38 +43,52 @@ export function parseFolderMetadata(folderPath: string): ParsedFolderInfo {
 
   // Resolution detection
   let resolution = "";
-  if (lower.includes("2160p") || lower.includes("4k") || lower.includes("uhd")) resolution = "2160p";
-  else if (lower.includes("1080p")) resolution = "1080p";
-  else if (lower.includes("1080i")) resolution = "1080i";
-  else if (lower.includes("720p")) resolution = "720p";
-  else if (lower.includes("576p")) resolution = "576p";
-  else if (lower.includes("576i")) resolution = "576i";
-  else if (lower.includes("480p")) resolution = "480p";
-  else if (lower.includes("480i")) resolution = "480i";
+  if (/\b(2160p|4k|uhd)\b/i.test(lower)) resolution = "2160p";
+  else if (/\b1080p\b/i.test(lower)) resolution = "1080p";
+  else if (/\b1080i\b/i.test(lower)) resolution = "1080i";
+  else if (/\b720p\b/i.test(lower)) resolution = "720p";
+  else if (/\b576p\b/i.test(lower)) resolution = "576p";
+  else if (/\b576i\b/i.test(lower)) resolution = "576i";
+  else if (/\b480p\b/i.test(lower)) resolution = "480p";
+  else if (/\b480i\b/i.test(lower)) resolution = "480i";
+
+  const hasEncodeCodec = /\b(x264|x265|h\.?264|h\.?265|hevc|xvid|divx|av1|bdrip|brrip)\b/i.test(lower);
 
   // Type / Source detection
   let type = "";
-  if (lower.includes("remux")) type = "remux";
-  else if (lower.includes("web-dl") || lower.includes("webdl")) type = "webdl";
-  else if (lower.includes("webrip") || lower.includes("web-rip")) type = "webrip";
-  else if (lower.includes("hdtv")) type = "hdtv";
-  else if (lower.includes("dvdrip")) type = "dvdrip";
-  else if (lower.includes("bluray") || lower.includes("bdmv") || lower.includes("dvd9") || lower.includes("dvd5") || lower.includes(".iso")) type = "disc";
-  else if (lower.includes("x264") || lower.includes("x265") || lower.includes("hevc") || lower.includes("avc")) type = "encode";
+  if (/\bremux\b/i.test(lower)) type = "remux";
+  else if (/\bweb-?rip\b/i.test(lower)) type = "webrip";
+  else if (/\bweb-?dl\b/i.test(lower) || /\bweb\b/i.test(lower)) type = "webdl";
+  else if (/\bhdtv\b/i.test(lower)) type = "hdtv";
+  else if (/\bdvd-?rip\b/i.test(lower)) type = "dvdrip";
+  else if (/\b(bdmv|video_ts|dvd9|dvd5)\b/i.test(lower) || /\.iso$/i.test(lower)) type = "disc";
+  else if (hasEncodeCodec) type = "encode";
+  else if (/\b(bluray|blu-ray)\b/i.test(lower)) type = "disc";
+  else if (/\bavc\b/i.test(lower)) type = "encode";
+
+  const hasVideoIndicators = Boolean(
+    resolution ||
+    type ||
+    /\b(bluray|blu-ray|bdrip|brrip|web-?dl|web-?rip|hdrip|dvdrip|hdtv|remux|x264|x265|h\.?264|h\.?265|hevc|avc|xvid|divx|mkv|mp4|avi)\b/i.test(lower)
+  );
 
   // Category detection
   let category = "";
-  if (lower.includes("s0") || lower.includes("s1") || lower.includes("season") || /\b\d{1,2}x\d{2}\b/i.test(lower)) {
+  if (
+    /\bs\d{1,2}e\d{1,2}\b/i.test(lower) ||
+    /\bs\d{2}\b/i.test(lower) ||
+    /\bs\d{1,2}\b(?=[\s._\-\[\(]*(?:complete|pack|1080|720|2160|480|576|bluray|web|hdtv|dvd|bdrip|x264|x265|hevc|h\.?264|h\.?265))/i.test(lower) ||
+    /\b(season|series)\s*\d+\b/i.test(lower) ||
+    /\b\d{1,2}x\d{2}\b/i.test(lower)
+  ) {
     category = "tv";
-  } else if (lower.includes("flac")) {
+  } else if (!hasVideoIndicators && /\b(flac|lossless|24bit)\b/i.test(lower)) {
     category = "29"; // Glazba / FLAC
-  } else if (lower.includes("mp3") || lower.includes("album") || lower.includes("discography") || lower.includes("ost")) {
+  } else if (!hasVideoIndicators && /\b(mp3|320kbps|cbr|vbr|ost|soundtrack|discography)\b/i.test(lower)) {
     category = "3"; // Glazba / MP3
-  } else if (!type && !resolution && (lower.includes("fitgirl") || lower.includes("dodi") || lower.includes("elamigos") || lower.includes("razor1911") || lower.includes("skidrow") || lower.includes("codex") || lower.includes("pc game"))) {
-    category = "5"; // Igre / PC
-  } else if (lower.includes("docu") || lower.includes("documentary")) {
+  } else if (/\b(docu|documentary)\b/i.test(lower)) {
     category = "12"; // Dokumentarci
-  } else if (lower.includes("anime")) {
+  } else if (/\banime\b/i.test(lower)) {
     category = "31"; // Anime
   } else {
     // Default to movies
