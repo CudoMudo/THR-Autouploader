@@ -962,7 +962,7 @@ async def screenshots(
             console.print(traceback.format_exc())
         return None
     meta['frame_rate'] = frame_rate
-    loglevel = 'verbose' if meta.get('ffdebug', False) else 'quiet'
+    loglevel = 'verbose' if meta.get('ffdebug', False) else 'error'
     os.chdir(f"{base_dir}/tmp/{folder_id}")
 
     if manual_frames and meta['debug']:
@@ -1455,9 +1455,13 @@ async def capture_screenshot(args: tuple[int, str, float, str, float, float, flo
                     console.print(f"[green]Screenshot captured successfully: {image_path}[/green]")
                 return (index, image_path)
             else:
-                if loglevel == 'verbose' or (meta and meta.get('debug', False)):
-                    err_txt = (stderr or b"").decode(errors='replace').strip()
-                    console.print(f"[red]FFmpeg process failed (final): {err_txt}[/red]")
+                err_txt = (stderr or b"").decode('utf-8', errors='replace').strip()
+                if err_txt:
+                    err_lines = [line for line in err_txt.splitlines() if "Fontconfig error" not in line]
+                    short_err = "\n".join(err_lines[:6]) if err_lines else err_txt.splitlines()[0]
+                    console.print(f"[red]FFmpeg error capturing screenshot: {short_err}[/red]")
+                else:
+                    console.print(f"[red]FFmpeg error capturing screenshot (exit code {returncode})[/red]")
                 return (index, None)
 
         # Proceed with screenshot capture

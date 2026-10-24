@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import { markdownToBbcode } from "./utils/bbcode";
 import { formatCleanTitle, parseFolderMetadata } from "./utils/formatters";
+import thrLogo from "./assets/thr-logo.png";
 import "./App.css";
 
 export interface QueueItem {
@@ -595,7 +596,7 @@ function App() {
         <header className="header">
           <h1>
             <span>⚙️ Postavke</span>
-            <span className="app-version-badge">v1.5.0</span>
+            <span className="app-version-badge">v1.5.1</span>
           </h1>
           <p className="subtitle">Unesi API ključeve i podatke svog Seedboxa</p>
         </header>
@@ -801,8 +802,9 @@ function App() {
 
       <header className="header">
         <h1>
-          <span>THR Autouploader</span>
-          <span className="app-version-badge">v1.5.0</span>
+          <img src={thrLogo} alt="THR" className="header-thr-logo" />
+          <span>Autouploader</span>
+          <span className="app-version-badge">v1.5.1</span>
         </h1>
         <p className="subtitle">Sve opcije na dlanu, bez terminala</p>
       </header>

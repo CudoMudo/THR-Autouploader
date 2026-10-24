@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.5.0_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.5.1_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,18 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.5.0 (Trenutna Verzija)
+### v1.5.1 (Trenutna Verzija)
+* **Fix - Eliminacija Lažnog Uspjeha kod Greške Uploada (sys.exit(0) u inally bloku):**
+  - Riješen kritični bug u ackend/upload.py gdje je inally: blok na kraju izvršavanja imao fiksni sys.exit(0) koji je tiho gazio sys.exit(1) iz except bloka, zbog čega je GUI čak i nakon neuspjelog slikanja screenshotova ili odbijanja od strane trackera prikazivao lažnu poruku [SISTEM] Uspjeh! Torrent je uspješno uploadan..
+  - U ackend/src/trackerhandle.py i ackend/upload.py dodano praćenje stvarnog statusa uploada (meta['upload_failed']) tako da svaka pogreška rezultira povratnim kodom 1 i crvenom oznakom greške u GUI-ju.
+* **Fix - Isključivanje rame_overlay Teksta na Slikama i Prikaz Stvarnih FFmpeg Grešaka:**
+  - Postavka rame_overlay postavljena je na False u ackend/data/templates/config.py i forsirana kroz Tauri bridge (lib.rs), čime su uklonjene lažne Fontconfig error: Cannot load default config file poruke na Windowsu te neželjeno utiskivanje teksta broja frejma na THR screenshotove.
+  - U ackend/src/takescreens.py razina FFmpeg logiranja promijenjena je iz quiet u error uz ispis stvarnog uzroka greške dekodiranja (npr. kada je video datoteka oštećena ili kriptirana) umjesto skrivanja stvarnog problema.
+* **UI/Branding - Novi THR Logo u Zaglavlju i Maksimalno Uvećana Windows Ikona:**
+  - U glavnom zaglavlju aplikacije tekstualna riječ THR zamijenjena je novim vektoriziranim THR grafičkim logotipom visoke oštrine ([THR logo] Autouploader v1.5.1).
+  - Ažurirane su sve Windows ikone aplikacije (icon.ico u svim rezolucijama 16px–256px te icons/*.png) s uklonjenim praznim rubom (98% popunjenosti kvadrata) radi maksimalne vidljivosti u Windows Exploreru, taskbaru i zaglavlju prozora.
+
+### v1.5.0
 * **Fix - Eliminacija Lažne Detekcije Filmova i Serija kao Glazbe (`FLAC`, `MP3`, `"ost"`):**
   - Riješen kritični propust u `formatters.ts` gdje je sirova provjera podstringova (`lower.includes("ost")`, `lower.includes("flac")`, `lower.includes("mp3")`) pogrešno svrstavala filmove i serije s riječima poput *Ghost*, *Ghostbusters*, *Lost*, *Host*, *Boston*, *Almost* ili video izdanja s FLAC/MP3 zvukom u glazbene kategorije (`29` / `3`) i brisala im rezoluciju u `"other"`.
   - U `App.tsx` uklonjen "lock-in" uvjet koji je zadržavao krivo pogođenu glazbenu kategoriju čak i nakon što je Python backend skeniranjem `.mkv` datoteke utvrdio da se radi o filmu ili seriji (`MOVIE` / `TV`).

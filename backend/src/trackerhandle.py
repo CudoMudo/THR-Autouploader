@@ -142,10 +142,12 @@ async def process_trackers(
                         upload_duration = time.time() - upload_start_time
                         meta[f'{tracker}_upload_duration'] = upload_duration
                     except Exception as e:
+                        meta['upload_failed'] = True
                         console.print(f"[red]Upload failed: {e}")
                         console.print(traceback.format_exc())
                         return
                 except Exception:
+                    meta['upload_failed'] = True
                     console.print(traceback.format_exc())
                     return
 
@@ -158,6 +160,7 @@ async def process_trackers(
                     await client.add_to_client(meta, tracker_class.tracker)
                     print_tracker_result(tracker, tracker_class, status, True)
                 else:
+                    meta['upload_failed'] = True
                     print_tracker_result(tracker, tracker_class, status, False)
                     console.print(f"[red]{tracker} upload failed or returned data error.[/red]")
 

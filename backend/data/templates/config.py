@@ -68,7 +68,7 @@ config = {
         "screens_per_row": "",
 
         # Overlay Frame number/type and "Tonemapped" if applicable to screenshots
-        "frame_overlay": True,
+        "frame_overlay": False,
 
         # Overlay text size (scales with resolution)
         "overlay_text_size": "18",

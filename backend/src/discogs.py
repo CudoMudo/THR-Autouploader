@@ -6,7 +6,7 @@ from typing import Any, Optional
 import httpx
 from src.console import console
 
-USER_AGENT = "THR-Autouploader/1.5.0"
+USER_AGENT = "THR-Autouploader/1.5.1"
 
 
 def _get_headers() -> dict[str, str]:

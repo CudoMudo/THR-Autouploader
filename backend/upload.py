@@ -1768,6 +1768,7 @@ async def do_the_thing(base_dir: str) -> None:
 
                 if successful_trackers < skip_uploading_int and not meta['debug']:
                     console.print(f"[red]Not enough successful trackers ({successful_trackers}/{skip_uploading_int}). No uploads being processed.[/red]")
+                    sys.exit(1)
                 else:
                     await process_trackers(
                         meta,
@@ -1779,6 +1780,8 @@ async def do_the_thing(base_dir: str) -> None:
                         list(http_trackers),
                         list(other_api_trackers),
                     )
+                    if meta.get('upload_failed', False) and not meta.get('debug', False):
+                        sys.exit(1)
                     if use_discord and bot:
                         await DiscordNotifier.send_upload_status_notification(config, bot, meta)
 
@@ -2142,13 +2145,15 @@ async def main() -> None:
     except asyncio.CancelledError:
         if not _shutdown_requested:
             console.print("[red]Tasks were cancelled. Exiting safely.[/red]")
+        sys.exit(1)
     except EOFError:
         pass  # Web UI cancellation - handled silently
     except KeyboardInterrupt:
-        pass  # Handled by signal handler
+        sys.exit(1)
     except Exception as e:
         if not _shutdown_requested:
             console.print(f"[bold red]Unexpected error: {e}[/bold red]")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -2159,16 +2164,26 @@ if __name__ == "__main__":
     if hasattr(signal, 'SIGTERM'):
         signal.signal(signal.SIGTERM, _handle_shutdown_signal)
 
+    _exit_code = 0
     try:
         # Use ProactorEventLoop for Windows subprocess handling
         if sys.platform == "win32":
             asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
         asyncio.run(main())  # Ensures proper loop handling and cleanup
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt:
+        _exit_code = 1
+        if not _shutdown_requested:
+            console.print("\n[yellow]Shutting down...[/yellow]")
+    except SystemExit as e:
+        if isinstance(e.code, int):
+            _exit_code = e.code
+        elif e.code:
+            _exit_code = 1
         if not _shutdown_requested:
             console.print("\n[yellow]Shutting down...[/yellow]")
     except BaseException as e:
+        _exit_code = 1
         if not _shutdown_requested:
             console.print(f"[bold red]Critical error: {e}[/bold red]")
     finally:
@@ -2192,4 +2207,4 @@ if __name__ == "__main__":
         if _shutdown_requested or _is_webui_mode:
             console.print("[green]Shutdown complete[/green]")
 
-        sys.exit(0)
+        sys.exit(_exit_code)

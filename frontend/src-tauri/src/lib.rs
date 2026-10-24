@@ -411,6 +411,7 @@ async fn start_upload(app: AppHandle, payload: UploadPayload) -> Result<(), Stri
         config_content.push_str("if os.environ.get('THR_API_KEY'):\n    config['TRACKERS']['THR']['api_key'] = os.environ.get('THR_API_KEY')\n");
         config_content.push_str("if os.environ.get('TMDB_API_KEY'):\n    config['DEFAULT']['tmdb_api'] = os.environ.get('TMDB_API_KEY')\n");
         config_content.push_str("config['DEFAULT']['img_host_1'] = 'slikethr'\n");
+        config_content.push_str("config['DEFAULT']['frame_overlay'] = False\n");
         
         // Force default_torrent_client to the selected client
         let default_client = if payload.client_type == "none" { "qbittorrent" } else { &payload.client_type };
@@ -566,6 +567,7 @@ async fn dry_run_upload(
         config_content.push_str("if os.environ.get('THR_API_KEY'):\n    config['TRACKERS']['THR']['api_key'] = os.environ.get('THR_API_KEY')\n");
         config_content.push_str("if os.environ.get('TMDB_API_KEY'):\n    config['DEFAULT']['tmdb_api'] = os.environ.get('TMDB_API_KEY')\n");
         config_content.push_str("config['DEFAULT']['img_host_1'] = 'slikethr'\n");
+        config_content.push_str("config['DEFAULT']['frame_overlay'] = False\n");
         
         let _ = std::fs::write(&config_path, config_content);
     }
