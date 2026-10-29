@@ -596,7 +596,7 @@ function App() {
         <header className="header">
           <h1>
             <span>⚙️ Postavke</span>
-            <span className="app-version-badge">v1.5.1</span>
+            <span className="app-version-badge">v1.5.2</span>
           </h1>
           <p className="subtitle">Unesi API ključeve i podatke svog Seedboxa</p>
         </header>
@@ -804,7 +804,7 @@ function App() {
         <h1>
           <img src={thrLogo} alt="THR" className="header-thr-logo" />
           <span>Autouploader</span>
-          <span className="app-version-badge">v1.5.1</span>
+          <span className="app-version-badge">v1.5.2</span>
         </h1>
         <p className="subtitle">Sve opcije na dlanu, bez terminala</p>
       </header>

@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.5.1_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.5.2_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,14 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.5.1 (Trenutna Verzija)
+### v1.5.2 (Trenutna Verzija)
+* **Fix - Automatsko Prepoznavanje `Dual Audio`, `MULTiSiNK` i `Dubbed` iz MediaInfo (`audio.py`, `get_name.py`):**
+  - Rije?en kriti?ni bug u `backend/src/audio.py` gdje je `bloated_check` pri nailasku na ne-englesku audio traku (npr. `hr`, `sr`, `ko`) pozivao `langcodes.Language.display_name()` i pucao s `ModuleNotFoundError: No module named 'language_data'`, ?ime se tiho prekidao cijeli blok za detekciju vi?ejezi?nog zvuka.
+  - Kada MediaInfo detektira **2 audio trake / jezika**, u generirani naziv torrenta automatski se ubacuje **`Dual Audio`** ispred rezolucije (npr. `KPop Demon Hunters Sing-Along 2025 Dual Audio 1080p NF WEB-DL AAC 5.1 AV1-PiPi`).
+  - Kada MediaInfo detektira **3 ili vi?e audio traka / jezika**, u naziv torrenta automatski se ubacuje **`MULTiSiNK`** ispred rezolucije (npr. `KPop Demon Hunters Sing-Along 2025 MULTiSiNK 1080p NF WEB-DL AAC 5.1 AV1-PiPi`).
+  - Pro?irena detekcija **`Dubbed`** oznake kada izdanje ima samo 1 audio traku koja nije izvorni jezik filma/serije (sada radi i kada je jedini zvuk npr. hrvatski `hr` na stranom filmu, a ne samo engleski `en` na japanskom).
+
+### v1.5.1
 * **Fix - Eliminacija Lažnog Uspjeha kod Greške Uploada (sys.exit(0) u inally bloku):**
   - Riješen kritični bug u ackend/upload.py gdje je inally: blok na kraju izvršavanja imao fiksni sys.exit(0) koji je tiho gazio sys.exit(1) iz except bloka, zbog čega je GUI čak i nakon neuspjelog slikanja screenshotova ili odbijanja od strane trackera prikazivao lažnu poruku [SISTEM] Uspjeh! Torrent je uspješno uploadan..
   - U ackend/src/trackerhandle.py i ackend/upload.py dodano praćenje stvarnog statusa uploada (meta['upload_failed']) tako da svaka pogreška rezultira povratnim kodom 1 i crvenom oznakom greške u GUI-ju.

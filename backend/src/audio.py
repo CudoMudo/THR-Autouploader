@@ -321,13 +321,13 @@ async def _get_audio_v2(
             # Propagate specific error so callers can handle it explicitly
             raise
 
+        meta['audio_lang_tag'] = ""
         if meta.get('dual_audio', False):
-            dual = "Dual-Audio"
+            meta['audio_lang_tag'] = "Dual Audio"
         else:
-            # if not meta.get('original_language', '').startswith('en'):
             if not meta['is_disc']:
                 eng, orig, non_en_non_commentary = False, False, False
-                orig_lang = meta.get('original_language', '').lower()
+                orig_lang = str(meta.get('original_language') or '').lower().strip()
                 if meta['debug']:
                     console.print(f"DEBUG: Original Language: {orig_lang}")
                 try:
@@ -363,44 +363,81 @@ async def _get_audio_v2(
 
                     # First pass: collect all audio languages and set flags
                     non_eng_non_orig_languages: list[str] = []
+                    unique_langs: list[str] = []
                     for t in audio_tracks:
                         audio_language = str(t.get('Language') or '')
                         if meta['debug']:
                             console.print(f"DEBUG: Audio Language = {audio_language}")
                         audio_language = audio_language.lower().strip()
+                        norm_lang = audio_language.split('-')[0].split('_')[0].strip()
+                        if norm_lang in ('cmn', 'yue', 'zho', 'chi'):
+                            norm_lang = 'zh'
+                        elif norm_lang in ('nob', 'nno', 'nor'):
+                            norm_lang = 'no'
+                        elif norm_lang in ('zxx', 'xx', 'und', 'mis', 'mul'):
+                            norm_lang = ''
+                        if norm_lang and norm_lang not in unique_langs:
+                            unique_langs.append(norm_lang)
+
                         if audio_language.startswith("en"):
                             if meta['debug']:
                                 console.print(f"DEBUG: Found English audio track: {audio_language}")
                             eng = True
 
-                        if audio_language and "en" not in audio_language and audio_language.startswith(orig_lang):
+                        if orig_lang and audio_language and "en" not in audio_language and audio_language.startswith(orig_lang):
                             if meta['debug']:
                                 console.print(f"DEBUG: Found original language audio track: {audio_language}")
                             orig = True
 
                         variants = ['zh', 'cn', 'cmn', 'no', 'nb']
-                        if any(audio_language.startswith(var) for var in variants) and any(orig_lang.startswith(var) for var in variants):
+                        if orig_lang and any(audio_language.startswith(var) for var in variants) and any(orig_lang.startswith(var) for var in variants):
                             if meta['debug']:
                                 console.print(f"DEBUG: Found original language audio track with variant: {audio_language}")
                             orig = True
 
-                        if audio_language and not audio_language.startswith(orig_lang) and not audio_language.startswith("en") and not audio_language.startswith("zx"):
+                        if audio_language and (not orig_lang or not audio_language.startswith(orig_lang)) and not audio_language.startswith("en") and not audio_language.startswith("zx"):
                             non_en_non_commentary = True
                             non_eng_non_orig_languages.append(audio_language)
 
                     # Second pass: now that we have complete information about all tracks, check for bloat
                     if non_eng_non_orig_languages:
-                        # Compute is_eng_original once with complete track information
-                        is_eng_original = (orig_lang == "en" and eng and non_en_non_commentary)
+                        try:
+                            is_eng_original = (orig_lang == "en" and eng and non_en_non_commentary)
+                            bloated_check(meta, non_eng_non_orig_languages, is_eng_original_with_non_eng=is_eng_original)
+                        except Exception:
+                            pass
 
-                        # Check all non-English, non-original languages for bloat
-                        bloated_check(meta, non_eng_non_orig_languages, is_eng_original_with_non_eng=is_eng_original)
+                    main_audio_tracks = [
+                        t for t in audio_tracks
+                        if not any(w in str(t.get('Title') or '').lower() for w in ('descriptive', 'audio description', 'visually impaired'))
+                    ]
+                    if not main_audio_tracks:
+                        main_audio_tracks = audio_tracks
 
-                    if ((eng and (orig or non_en_non_commentary)) or (orig and non_en_non_commentary)) and len(audio_tracks) > 1 and not meta.get('no_dual', False):
-                        dual = "Dual-Audio"
-                        meta['dual_audio'] = True
-                    elif eng and not orig and orig_lang not in ['zxx', 'xx', 'en', None] and not meta.get('no_dub', False):
-                        dual = "Dubbed"
+                    is_same_lang_compat_pair = False
+                    if len(main_audio_tracks) == 2 and len(unique_langs) == 1:
+                        fmt0 = str(main_audio_tracks[0].get('Format') or '').upper()
+                        fmt1 = str(main_audio_tracks[1].get('Format') or '').upper()
+                        lossless_fmts = ('MLP FBA', 'TRUEHD', 'DTS-HD', 'PCM', 'FLAC')
+                        lossy_fmts = ('AC-3', 'E-AC-3', 'DTS')
+                        if (any(f in fmt0 for f in lossless_fmts) and any(f in fmt1 for f in lossy_fmts)) or (
+                            any(f in fmt1 for f in lossless_fmts) and any(f in fmt0 for f in lossy_fmts)
+                        ):
+                            is_same_lang_compat_pair = True
+
+                    effective_track_count = len(main_audio_tracks) - (1 if is_same_lang_compat_pair else 0)
+
+                    if not meta.get('no_dual', False):
+                        if len(unique_langs) >= 3 or effective_track_count >= 3:
+                            meta['audio_lang_tag'] = "MULTiSiNK"
+                            meta['multi_audio'] = True
+                        elif len(unique_langs) == 2 or effective_track_count == 2:
+                            meta['audio_lang_tag'] = "Dual Audio"
+                            meta['dual_audio'] = True
+                        elif effective_track_count == 1 and orig_lang not in ['zxx', 'xx', '', None] and not meta.get('no_dub', False):
+                            has_orig_track = (orig_lang.startswith('en') and eng) or orig
+                            if not has_orig_track and (eng or non_en_non_commentary):
+                                dual = "Dubbed"
                 except Exception:
                     console.print(traceback.format_exc())
                     pass
@@ -506,7 +543,7 @@ def bloated_check(meta: Meta, audio_languages: Union[Sequence[str], str], is_eng
     if isinstance(audio_languages, str):
         audio_languages = [audio_languages]
 
-    bloat_is_allowed = ["ASC", "BJS", "BT", "CBR", "DC", "FF", "LCD", "SAM", "SHRI", "SP", "TL", "TOS"]
+    bloat_is_allowed = ["ASC", "BJS", "BT", "CBR", "DC", "FF", "LCD", "SAM", "SHRI", "SP", "TL", "TOS", "THR"]
     # Trackers that allow specific languages (list of allowed language codes per tracker)
     tracker_allowed_bloat_languages = {
         "AITHER": ["en"],
@@ -549,7 +586,7 @@ def bloated_check(meta: Meta, audio_languages: Union[Sequence[str], str], is_eng
             if clean_lang:
                 lang = langcodes.Language.get(clean_lang)
                 language_display = lang.display_name()
-        except (LookupError, AttributeError, ValueError) as e:
+        except Exception as e:
             # Silently fall back to the original language code
             if meta.get('debug'):
                 console.print(f"[yellow]Debug: Unable to convert language code '{audio_language}' to full name: {e}[/yellow]")

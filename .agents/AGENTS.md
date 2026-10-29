@@ -27,6 +27,9 @@ Ovo je **SIDE PROJEKT** (lokalna desktop aplikacija), a NE glavni TorrentHR (VM/
 
 
 **LOG RADOVA / CHANGELOG (Za Agente):**
+- **v1.5.2:**
+  - **MediaInfo Detekcija za `Dual Audio`, `MULTiSiNK` i `Dubbed` (`audio.py`, `get_name.py`):** U `audio.py` popravljen tihi pad u `bloated_check` (`ModuleNotFoundError: No module named 'language_data'` iz `langcodes.display_name()`) koji je prekidao detekciju vi?ejezi?nog zvuka ?im bi nai?ao na `hr`/`sr`/`ko` audio traku; dodan `'THR'` u `bloat_is_allowed`. Uvedena detekcija broja audio traka/jezika iz MediaInfo: za 2 audio trake postavlja se `meta['audio_lang_tag'] = 'Dual Audio'`, za 3+ audio trake `meta['audio_lang_tag'] = 'MULTiSiNK'` (uz ignoriranje BluRay lossless+lossy compatibility parova istog jezika), a u `get_name.py` `audio_lang_tag` je pozicioniran neposredno ispred `{resolution}`. Za 1 ne-originalnu audio traku pro?iren uvjet za `Dubbed` tako da pokriva i ne-engleske sinkronizacije (npr. samo `hr` na `en`/`ja` filmu).
+
 - **v1.5.1:**
   - **Fix Lažnog Uspjeha (upload.py, 	rackerhandle.py):** U upload.py uklonjen bezuvjetni sys.exit(0) iz inally: bloka koji je gazio SystemExit(1) iz except bloka; uveden _exit_code i meta['upload_failed'] u 	rackerhandle.py kako bi proces uvijek vratio exit code 1 pri padu screenshotova ili odbijanju uploada na trackeru.
   - **Fix FFmpeg rame_overlay i Dijagnostike (	akescreens.py, config.py, lib.rs):** Isključen rame_overlay (False) u templateu config.py i kroz # --- TAURI OVERRIDES --- u lib.rs (sprječava Fontconfig error na Windowsu i lijepljenje teksta po screenshotovima). U 	akescreens.py FFmpeg -loglevel promijenjen iz quiet u error uz ispis stvarnih stderr linija pri padu slikanja.
