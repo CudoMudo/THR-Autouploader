@@ -28,6 +28,96 @@ class THR(UNIT3D):
     # If advanced changes are required, copy the necessary functions from UNIT3D.py here
     # For example, if you need to modify the description, copy and paste the 'get_description' function and adjust it accordingly
 
+    @staticmethod
+    def detect_special_category(meta: Meta) -> str:
+        """
+        Strogo automatsko prepoznavanje specifičnih THR kategorija:
+        - '31' (Anime): samo pravi japanski anime (Animation + ja/JP/MAL/anime flag)
+        - '12' (Dokumentarni): samo pravi dokumentarci (Documentary žanr bez igranih/fikcijskih/animiranih žanrova)
+        - '18' (Crtani): samo pravi dječji/obiteljski crtani (Animation + Kids za TV ili Family/Kids za Movie, bez adult/sitcom/anime oznaka)
+        Ostalo vraća '' (ostaje standardni Film ili Serija).
+        """
+        internal_cat = str(meta.get('category') or '').strip().upper()
+        if internal_cat not in ('MOVIE', 'TV'):
+            return ''
+
+        raw_genres = ', '.join(
+            filter(
+                None,
+                [
+                    str(meta.get('combined_genres') or ''),
+                    str(meta.get('genres') or ''),
+                    str((meta.get('imdb_info') or {}).get('genres') or ''),
+                ],
+            )
+        )
+        genre_tokens = {g.strip().lower() for g in raw_genres.split(',') if g.strip()}
+        genre_ids = {int(gid) for gid in (meta.get('genre_ids') or []) if str(gid).isdigit()}
+
+        raw_keywords = str(meta.get('keywords') or '')
+        keyword_tokens = {k.strip().lower() for k in raw_keywords.split(',') if k.strip()}
+
+        orig_lang = str(meta.get('original_language') or '').strip().lower()
+        origin_countries = {str(c).strip().upper() for c in (meta.get('origin_country') or []) if c}
+        mal_id = int(meta.get('mal_id') or 0) if str(meta.get('mal_id') or '').isdigit() else 0
+        is_anime_flag = bool(meta.get('anime'))
+
+        has_animation = ('animation' in genre_tokens) or (16 in genre_ids) or ('anime' in genre_tokens)
+        has_documentary = ('documentary' in genre_tokens) or (99 in genre_ids)
+
+        # 1. Pravi Anime -> 31
+        is_true_anime = has_animation and (
+            is_anime_flag
+            or mal_id > 0
+            or orig_lang in ('ja', 'jpn', 'japanese')
+            or 'JP' in origin_countries
+        )
+        if is_true_anime:
+            return '31'
+
+        # 2. Pravi Dokumentarni -> 12
+        fictional_genres = {
+            'drama', 'comedy', 'action', 'action & adventure', 'adventure',
+            'science fiction', 'sci-fi', 'sci-fi & fantasy', 'fantasy',
+            'horror', 'thriller', 'romance', 'fiction', 'soap', 'western',
+        }
+        if (
+            has_documentary
+            and not has_animation
+            and not (genre_tokens & fictional_genres)
+            and 'mockumentary' not in keyword_tokens
+        ):
+            return '12'
+
+        # 3. Pravi Dječji Crtani -> 18
+        adult_or_dark_genres = {
+            'horror', 'thriller', 'crime', 'war', 'war & politics',
+            'mystery', 'erotic', 'adult', 'history', 'western', 'documentary',
+        }
+        adult_keywords = {
+            'adult animation', 'mature', 'gore', 'erotic', 'dark comedy',
+            'satire', 'parody', 'cyberpunk', 'anime', 'sitcom', 'black comedy',
+        }
+        if (
+            has_animation
+            and not is_true_anime
+            and not (genre_tokens & adult_or_dark_genres)
+            and not (keyword_tokens & adult_keywords)
+        ):
+            if internal_cat == 'TV':
+                if (10762 in genre_ids) or ('kids' in genre_tokens):
+                    return '18'
+            elif internal_cat == 'MOVIE':
+                if (
+                    (10751 in genre_ids)
+                    or (10762 in genre_ids)
+                    or ('family' in genre_tokens)
+                    or ('kids' in genre_tokens)
+                ):
+                    return '18'
+
+        return ''
+
     # If default UNIT3D categories, remove this function
     async def get_category_id(
         self,
@@ -67,7 +157,13 @@ class THR(UNIT3D):
         elif raw_manual.isdigit() and int(raw_manual) > 0:
             return {'category_id': raw_manual}
 
-        # 2. Automatsko određivanje THR kategorije na temelju detektiranog formata, rezolucije i medija
+        # 2. Ako nije ručno forsirana generička kategorija (MOVIE/TV), provjeri automatsku detekciju za Anime (31), Dokumentarni (12) i Crtani (18)
+        if raw_manual not in ('MOVIE', 'FILM', 'FILMOVI', 'TV', 'SERIJA', 'SERIJE', 'SERIES'):
+            special_cat = str(meta.get('thr_auto_category') or self.detect_special_category(meta)).strip()
+            if special_cat in ('31', '12', '18'):
+                return {'category_id': special_cat}
+
+        # 3. Automatsko određivanje THR kategorije na temelju detektiranog formata, rezolucije i medija
         cat_id = '0'
         res = str(meta.get('resolution', ''))
         is_hd = res in ('1080p', '1080i', '720p', '2160p', '4320p')

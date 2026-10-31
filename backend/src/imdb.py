@@ -1,6 +1,7 @@
 # Upload Assistant © 2025 Audionut & wastaken7 — Licensed under UAPL v1.0
 import asyncio
 import json
+import re
 import sys
 from collections.abc import Mapping
 from datetime import datetime, timezone
@@ -706,44 +707,75 @@ class ImdbManager:
             except Exception as e:
                 console.print(f"[bold red]Further reduced name search error:[/bold red] {e}")
 
+        _imdb_part_map = {
+            'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+            'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+            'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5,
+            'vi': 6, 'vii': 7, 'viii': 8, 'ix': 9, 'x': 10,
+        }
+
+        def _imdb_extract_part(t: Optional[str]) -> Optional[int]:
+            if not t:
+                return None
+            m = re.search(
+                r'\b(?:part|pt|vol|volume|chapter)[.\s_-]*(one|two|three|four|five|six|seven|eight|nine|ten|i|ii|iii|iv|v|vi|vii|viii|ix|x|\d+)\b',
+                str(t),
+                flags=re.IGNORECASE,
+            )
+            if not m:
+                return None
+            tok = m.group(1).lower()
+            return int(tok) if tok.isdigit() else _imdb_part_map.get(tok)
+
+        def _imdb_norm(t: str) -> str:
+            if not t:
+                return ""
+            c = t.lower().replace('&', 'and')
+            c = re.sub(
+                r'\b(part|pt|vol|volume|chapter)[.\s_-]*(one|two|three|four|five|six|seven|eight|nine|ten|i|ii|iii|iv|v|vi|vii|viii|ix|x|\d+)\b',
+                lambda m: f"part {int(m.group(2)) if m.group(2).isdigit() else _imdb_part_map.get(m.group(2).lower(), m.group(2).lower())}",
+                c,
+                flags=re.IGNORECASE,
+            )
+            c = re.sub(r'[:\-–—.,!?\'"()\[\]]', ' ', c)
+            return re.sub(r'\s+', ' ', c).strip()
+
+        def _imdb_type_valid(title_type_str: str) -> bool:
+            tl = (title_type_str or "").lower()
+            if "podcast" in tl or "music video" in tl or "video game" in tl:
+                return False
+            if category and category.lower() == "movie":
+                return "tv series" not in tl and "tv mini series" not in tl and "tv episode" not in tl
+            if category and category.lower() == "tv":
+                return "tv series" in tl or "tv mini series" in tl or "tv special" in tl
+            return True
+
+        q_part = _imdb_extract_part(filename)
+
         if quickie:
             if search_results:
-                first_result = search_results[0]
-                if debug:
-                    console.print(f"[cyan]Quickie search result: {first_result}[/cyan]")
-                node = self.safe_get(first_result, ["node"], {})
-                title = self.safe_get(node, ["title"], {})
-                type_info = self.safe_get(title, ["titleType"], {})
-                year = self.safe_get(title, ["releaseYear", "year"], None)
-                imdb_id = self.safe_get(title, ["id"], "")
-                year_int = int(year) if year else None
                 search_year_int = int(search_year) if search_year else None
+                for pass_tol in (0, 1):
+                    for candidate in search_results:
+                        node = self.safe_get(candidate, ["node"], {})
+                        title = self.safe_get(node, ["title"], {})
+                        title_text = self.safe_get(title, ["titleText", "text"], "")
+                        type_info = self.safe_get(title, ["titleType"], {})
+                        title_type = type_info.get("text", "") if isinstance(type_info, dict) else ""
+                        year = self.safe_get(title, ["releaseYear", "year"], None)
+                        imdb_id = self.safe_get(title, ["id"], "")
+                        year_int = int(year) if year else None
 
-                type_matches = False
-                if type_info:
-                    title_type = type_info.get("text", "").lower()
-                    is_tv = bool(category and category.lower() == "tv" and "tv series" in title_type)
-                    is_movie = bool(category and category.lower() == "movie" and "tv series" not in title_type)
-                    type_matches = is_tv or is_movie
-
-                if imdb_id and type_matches:
-                    if year_int and search_year_int:
-                        if year_int == search_year_int:
-                            imdbID = int(imdb_id.replace('tt', '').strip())
-                            return imdbID
-                        else:
-                            if debug:
-                                console.print(f"[yellow]Year mismatch: found {year_int}, expected {search_year_int}[/yellow]")
-                            return 0
-                    else:
-                        imdbID = int(imdb_id.replace('tt', '').strip())
-                        return imdbID
-                else:
-                    if not imdb_id and debug:
-                        console.print("[yellow]No IMDb ID found in quickie result[/yellow]")
-                    if not type_matches and debug:
-                        console.print(f"[yellow]Type mismatch: found {type_info.get('text', '')}, expected {category}[/yellow]")
-                    imdbID = 0
+                        if not imdb_id or not _imdb_type_valid(title_type):
+                            continue
+                        c_part = _imdb_extract_part(title_text)
+                        if q_part is not None and c_part is not None and c_part != q_part:
+                            continue
+                        if year_int and search_year_int:
+                            if abs(year_int - search_year_int) <= pass_tol:
+                                return int(imdb_id.replace('tt', '').strip())
+                        elif pass_tol == 0:
+                            return int(imdb_id.replace('tt', '').strip())
 
             return imdbID if imdbID else 0
 
@@ -756,23 +788,39 @@ class ImdbManager:
             elif len(search_results) > 1:
                 # Calculate similarity for all results
                 results_with_similarity: list[tuple[dict[str, Any], float]] = []
-                filename_norm = filename.lower().strip()
+                filename_norm = _imdb_norm(filename)
                 search_year_int = int(search_year) if search_year else 0
 
                 for r in search_results:
                     node = self.safe_get(r, ["node"], {})
                     title = self.safe_get(node, ["title"], {})
                     title_text = self.safe_get(title, ["titleText", "text"], "")
+                    type_info = self.safe_get(title, ["titleType"], {})
+                    title_type = type_info.get("text", "") if isinstance(type_info, dict) else ""
                     result_year = self.safe_get(title, ["releaseYear", "year"], 0)
 
-                    similarity = SequenceMatcher(None, filename_norm, title_text.lower().strip()).ratio()
+                    cand_norm = _imdb_norm(title_text)
+                    similarity = SequenceMatcher(None, filename_norm, cand_norm).ratio()
 
-                    # Only boost similarity if titles are very similar (>= 0.99) AND years match
-                    if similarity >= 0.99 and search_year_int > 0 and result_year > 0:
+                    c_part = _imdb_extract_part(title_text)
+                    if q_part is not None and c_part == q_part and ':' in title_text:
+                        prefix_norm = _imdb_norm(title_text.split(':', 1)[0])
+                        if prefix_norm:
+                            prefix_sim = SequenceMatcher(None, filename_norm, prefix_norm).ratio()
+                            if prefix_sim > similarity:
+                                similarity = prefix_sim
+
+                    if not _imdb_type_valid(title_type):
+                        similarity *= 0.2
+                    if q_part is not None and c_part is not None and c_part != q_part:
+                        similarity *= 0.1
+
+                    # Boost similarity if titles are very similar (>= 0.90) AND years match
+                    if similarity >= 0.90 and search_year_int > 0 and result_year > 0:
                         if result_year == search_year_int:
                             similarity += 0.1  # Full boost for exact year match
-                        elif result_year == search_year_int - 1:
-                            similarity += 0.05  # Half boost for -1 year
+                        elif abs(result_year - search_year_int) == 1:
+                            similarity += 0.08  # Boost for ±1 year
 
                     results_with_similarity.append((r, similarity))
 

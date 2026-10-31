@@ -31,7 +31,7 @@ export interface QueueItem {
 
 const isMovieOrTvCategory = (cat: string): boolean => {
   const c = (cat || "").toLowerCase();
-  return ["movie", "tv", "17", "4", "14", "40", "34", "7"].includes(c);
+  return ["movie", "tv", "17", "4", "14", "40", "34", "7", "12", "18", "31"].includes(c);
 };
 
 function App() {
@@ -222,11 +222,12 @@ function App() {
         item.category === "3" ||
         (meta.audio && String(meta.audio).toUpperCase() === "MP3");
 
-      // Preserve specific movie/TV sub-categories (12, 18, 31, etc.) when Python returns generic MOVIE/TV
+      // Preserve specific movie/TV sub-categories (12, 18, 31, etc.) or use strict auto-detected special category
+      const autoSpecialCat = meta.thr_auto_category ? String(meta.thr_auto_category) : "";
       const keepSpecificCat = ["12", "18", "31", "11", "17", "4", "14", "40", "34", "7"].includes(item.category);
       const finalCat = isMusic
         ? (isMp3 ? "3" : "29")
-        : (keepSpecificCat ? item.category : (recognizedCat || item.category || "movie"));
+        : (keepSpecificCat ? item.category : (autoSpecialCat || recognizedCat || item.category || "movie"));
       const finalRes = isMusic ? "other" : (recognizedRes || item.resolution || "1080p");
       const finalType = isMusic ? "other" : (recognizedType || item.type || "webdl");
 
@@ -596,7 +597,7 @@ function App() {
         <header className="header">
           <h1>
             <span>⚙️ Postavke</span>
-            <span className="app-version-badge">v1.5.2</span>
+            <span className="app-version-badge">v1.5.3</span>
           </h1>
           <p className="subtitle">Unesi API ključeve i podatke svog Seedboxa</p>
         </header>
@@ -804,7 +805,7 @@ function App() {
         <h1>
           <img src={thrLogo} alt="THR" className="header-thr-logo" />
           <span>Autouploader</span>
-          <span className="app-version-badge">v1.5.2</span>
+          <span className="app-version-badge">v1.5.3</span>
         </h1>
         <p className="subtitle">Sve opcije na dlanu, bez terminala</p>
       </header>
@@ -897,7 +898,7 @@ function App() {
                         {item.cleanTitle || item.folderName}
                       </div>
                       <div className="queue-item-meta">
-                        <span>{item.category}</span>
+                        <span>{item.category === "31" ? "Anime (31)" : item.category === "12" ? "Doku (12)" : item.category === "18" ? "Crtani (18)" : item.category === "29" ? "FLAC (29)" : item.category === "3" ? "MP3 (3)" : item.category}</span>
                         <span>• {item.resolution || "Auto"}</span>
                         {item.apiId ? (
                           <span>• ID: {item.apiId}</span>

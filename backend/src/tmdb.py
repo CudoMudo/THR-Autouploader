@@ -281,10 +281,51 @@ class TmdbManager:
 
 
 
+_PART_WORD_MAP = {
+    'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+    'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+    'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5,
+    'vi': 6, 'vii': 7, 'viii': 8, 'ix': 9, 'x': 10,
+}
+
+
+def extract_part_number(title: Optional[str]) -> Optional[int]:
+    if not title:
+        return None
+    m = re.search(
+        r'\b(?:part|pt|vol|volume|chapter)[.\s_-]*(one|two|three|four|five|six|seven|eight|nine|ten|i|ii|iii|iv|v|vi|vii|viii|ix|x|\d+)\b',
+        str(title),
+        flags=re.IGNORECASE,
+    )
+    if not m:
+        return None
+    tok = m.group(1).lower()
+    if tok.isdigit():
+        return int(tok)
+    return _PART_WORD_MAP.get(tok)
+
+
 async def normalize_title(title: str) -> str:
     if not title:
         return ""
     cleaned = title.lower().replace('&', 'and')
+
+    def _repl_part(m: re.Match[str]) -> str:
+        prefix = m.group(1).lower()
+        if prefix in ('pt', 'part'):
+            prefix = 'part'
+        elif prefix in ('vol', 'volume'):
+            prefix = 'vol'
+        tok = m.group(2).lower()
+        num = int(tok) if tok.isdigit() else _PART_WORD_MAP.get(tok, tok)
+        return f"{prefix} {num}"
+
+    cleaned = re.sub(
+        r'\b(part|pt|vol|volume|chapter)[.\s_-]*(one|two|three|four|five|six|seven|eight|nine|ten|i|ii|iii|iv|v|vi|vii|viii|ix|x|\d+)\b',
+        _repl_part,
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     # Strip punctuation characters: colons, hyphens, dashes, periods, commas, quotes, brackets
     cleaned = re.sub(r'[:\-–—.,!?\'"()\[\]]', ' ', cleaned)
     return re.sub(r'\s+', ' ', cleaned).strip()
@@ -483,6 +524,62 @@ async def get_tmdb_id(
                     except Exception:
                         console.print(f"[bold red]Failure with primary movie search: {response.status_code}[/bold red]")
 
+                    # Also fetch without strict year filter so ±1 year releases (e.g. Director's Cut / festival releases) are included
+                    if search_year:
+                        params_no_year = {k: v for k, v in params.items() if k != "year"}
+                        try:
+                            resp_no_year = await client.get(f"{TMDB_BASE_URL}/search/movie", params=params_no_year)
+                            if resp_no_year.status_code == 200:
+                                extra_results = resp_no_year.json().get("results", [])
+                                existing_ids = {r.get("id") for r in search_results.get("results", []) if isinstance(r, dict)}
+                                merged = list(search_results.get("results", []))
+                                for er in extra_results:
+                                    if isinstance(er, dict) and er.get("id") not in existing_ids:
+                                        merged.append(er)
+                                        existing_ids.add(er.get("id"))
+                                search_results["results"] = merged
+                        except Exception:
+                            pass
+
+                    # If filename has an explicit Part number, also query with word<->digit part variant (e.g. Part One <-> Part 1)
+                    _p_num = extract_part_number(filename)
+                    if _p_num is not None:
+                        _num_to_word = {1: 'One', 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine', 10: 'Ten'}
+                        _alt_queries: list[str] = []
+                        _q_digit = re.sub(
+                            r'\b(part|pt|vol|volume|chapter)[.\s_-]*(one|two|three|four|five|six|seven|eight|nine|ten|i|ii|iii|iv|v|vi|vii|viii|ix|x|\d+)\b',
+                            lambda m: f"{m.group(1)} {_p_num}",
+                            filename,
+                            flags=re.IGNORECASE,
+                        )
+                        if _q_digit.lower() != filename.lower():
+                            _alt_queries.append(_q_digit)
+                        if _p_num in _num_to_word:
+                            _q_word = re.sub(
+                                r'\b(part|pt|vol|volume|chapter)[.\s_-]*(one|two|three|four|five|six|seven|eight|nine|ten|i|ii|iii|iv|v|vi|vii|viii|ix|x|\d+)\b',
+                                lambda m: f"{m.group(1)} {_num_to_word[_p_num]}",
+                                filename,
+                                flags=re.IGNORECASE,
+                            )
+                            if _q_word.lower() != filename.lower() and _q_word not in _alt_queries:
+                                _alt_queries.append(_q_word)
+                        for _aq in _alt_queries:
+                            try:
+                                _alt_params = {k: v for k, v in params.items() if k != "year"}
+                                _alt_params["query"] = _aq
+                                _resp_alt = await client.get(f"{TMDB_BASE_URL}/search/movie", params=_alt_params)
+                                if _resp_alt.status_code == 200:
+                                    _extra = _resp_alt.json().get("results", [])
+                                    _exist = {r.get("id") for r in search_results.get("results", []) if isinstance(r, dict)}
+                                    _merged = list(search_results.get("results", []))
+                                    for _er in _extra:
+                                        if isinstance(_er, dict) and _er.get("id") not in _exist:
+                                            _merged.append(_er)
+                                            _exist.add(_er.get("id"))
+                                    search_results["results"] = _merged
+                            except Exception:
+                                pass
+
                 elif category == "TV":
                     if debug:
                         console.print(f"[green]Searching TMDb for TV show:[/] [cyan]{filename}[/cyan] (Year: {search_year})")
@@ -521,6 +618,19 @@ async def get_tmdb_id(
                     else:
                         limited_results = results[:8]
 
+                    # Exclude candidates with a conflicting explicit part number (e.g. Part One vs Part Two)
+                    q_part = extract_part_number(filename)
+                    if q_part is not None and limited_results:
+                        non_conflicting = [
+                            r for r in limited_results
+                            if extract_part_number(str(r.get('title') or r.get('name') or '')) in (None, q_part)
+                            and extract_part_number(str(r.get('original_title') or r.get('original_name') or '')) in (None, q_part)
+                        ]
+                        if non_conflicting:
+                            limited_results = non_conflicting
+                        else:
+                            limited_results = []
+
                     if len(limited_results) == 1:
                         tmdb_id = int(limited_results[0]['id'])
                         return tmdb_id, category
@@ -552,18 +662,23 @@ async def get_tmdb_id(
                         # Find all exact matches (title and year)
                         exact_matches: list[dict[str, Any]] = []
                         for r in limited_results:
-                            if r.get('title'):
-                                result_title = await normalize_title(str(r.get('title', '')))
-                            else:
-                                result_title = await normalize_title(str(r.get('name', '')))
-                            if r.get('original_title'):
-                                original_title = await normalize_title(str(r.get('original_title', '')))
-                            else:
-                                original_title = await normalize_title(str(r.get('original_name', '')))
+                            raw_main_title = str(r.get('title') or r.get('name') or '')
+                            raw_orig_title = str(r.get('original_title') or r.get('original_name') or '')
+                            result_title = await normalize_title(raw_main_title)
+                            original_title = await normalize_title(raw_orig_title)
+                            prefix_title = (
+                                await normalize_title(raw_main_title.split(':', 1)[0])
+                                if ':' in raw_main_title and q_part is not None and extract_part_number(raw_main_title) == q_part
+                                else ""
+                            )
                             result_year = int((r.get('release_date') or r.get('first_air_date') or '0')[:4] or 0)
 
                             match_found = False
-                            if _tmdb_title_matches(filename_norm, result_title) or _tmdb_title_matches(filename_norm, original_title):
+                            if (
+                                _tmdb_title_matches(filename_norm, result_title)
+                                or _tmdb_title_matches(filename_norm, original_title)
+                                or (prefix_title and _tmdb_title_matches(filename_norm, prefix_title))
+                            ):
                                 if search_year_int > 0 and result_year > 0:
                                     if _tmdb_year_matches(search_year_int, result_year):
                                         match_found = True
@@ -592,19 +707,25 @@ async def get_tmdb_id(
                         # If no exact matches, calculate similarity for all results and sort them
                         results_with_similarity: list[tuple[dict[str, Any], float]] = []
                         for r in limited_results:
-                            if r.get('title'):
-                                result_title = await normalize_title(str(r.get('title', '')))
-                            else:
-                                result_title = await normalize_title(str(r.get('name', '')))
-
-                            if r.get('original_title'):
-                                original_title = await normalize_title(str(r.get('original_title', '')))
-                            else:
-                                original_title = await normalize_title(str(r.get('original_name', '')))
+                            raw_main_title = str(r.get('title') or r.get('name') or '')
+                            raw_orig_title = str(r.get('original_title') or r.get('original_name') or '')
+                            result_title = await normalize_title(raw_main_title)
+                            original_title = await normalize_title(raw_orig_title)
 
                             # Calculate similarity for both main title and original title
                             main_similarity = SequenceMatcher(None, filename_norm, result_title).ratio()
                             original_similarity = SequenceMatcher(None, filename_norm, original_title).ratio()
+
+                            # If both query and candidate share the same explicit part number and candidate has a colon subtitle, check prefix similarity
+                            c_part = extract_part_number(raw_main_title) or extract_part_number(raw_orig_title)
+                            if q_part is not None and c_part == q_part and ':' in raw_main_title:
+                                prefix_norm = await normalize_title(raw_main_title.split(':', 1)[0])
+                                if prefix_norm:
+                                    prefix_sim = SequenceMatcher(None, filename_norm, prefix_norm).ratio()
+                                    if prefix_sim > main_similarity:
+                                        main_similarity = prefix_sim
+                                    if prefix_sim > original_similarity:
+                                        original_similarity = prefix_sim
 
                             # Try getting TMDb translation for original title if it's different
                             translated_title = ""
@@ -640,6 +761,9 @@ async def get_tmdb_id(
                             else:
                                 similarity = main_similarity * 0.5 + translated_similarity * 0.5 if secondary_best == 0.0 else main_similarity * 0.5 + secondary_best * 0.5
 
+                            if q_part is not None and c_part is not None and c_part != q_part:
+                                similarity *= 0.1
+
                             result_year = int((r.get('release_date') or r.get('first_air_date') or '0')[:4] or 0)
 
                             if debug:
@@ -656,8 +780,8 @@ async def get_tmdb_id(
                             if similarity >= 0.9 and search_year_int > 0 and result_year > 0:
                                 if result_year == search_year_int:
                                     similarity += 0.1  # Full boost for exact year match
-                                elif result_year == search_year_int + 1:
-                                    similarity += 0.1  # Boost for +1 year (handles TMDB/IMDb differences)
+                                elif abs(result_year - search_year_int) == 1:
+                                    similarity += 0.08  # Boost for ±1 year (handles Director's Cut / TMDB/IMDb differences)
 
                             results_with_similarity.append((r, similarity))
 
@@ -829,7 +953,7 @@ async def get_tmdb_id(
         if result and result != (0, category):
             return result
 
-    # Try searching with year + 1 if search_year is provided
+    # Try searching with year - 1 and year + 1 if search_year is provided
     if not search_results.get('results'):
         try:
             year_int = int(search_year) if search_year is not None else 0
@@ -837,12 +961,12 @@ async def get_tmdb_id(
             year_int = 0
 
         if year_int > 0:
-            imdb_year = year_int + 1
-            if debug:
-                console.print("[yellow]Retrying with year +1...[/yellow]")
-            result = await search_tmdb_id(filename, imdb_year, category, untouched_filename, attempted + 1, debug=debug, secondary_title=secondary_title, path=path, unattended=unattended)
-            if result and result != (0, category):
-                return result
+            for alt_year, label in ((year_int - 1, "-1"), (year_int + 1, "+1")):
+                if debug:
+                    console.print(f"[yellow]Retrying with year {label} ({alt_year})...[/yellow]")
+                result = await search_tmdb_id(filename, alt_year, category, untouched_filename, attempted + 1, debug=debug, secondary_title=secondary_title, path=path, unattended=unattended)
+                if result and result != (0, category):
+                    return result
 
     # Try switching category
     if not search_results.get('results'):

@@ -16,7 +16,7 @@ Automatski uploader za TorrentHR s grafičkim (Tauri) sučeljem i Python (PyInst
 Kao krajnjem korisniku, sve što vam treba nalazi se u sekciji **Releases**.
 
 1. Otiđite na sekciju **Releases** na GitHubu (s desne strane ekrana).
-2. Preuzmite najnoviji **`THRuploader_v1.5.2_Portable.zip`**.
+2. Preuzmite najnoviji **`THRuploader_v1.5.3_Portable.zip`**.
 3. Otpakirajte mapu bilo gdje na vašem računalu (Desktop, Dokumenti, USB...).
 4. Pokrenite **`thr_autouploader.exe`**.
 
@@ -60,7 +60,18 @@ Završni `.exe` nalazit će se u `frontend/src-tauri/target/release/thr_autouplo
 
 ## Povijest Verzija (Changelog)
 
-### v1.5.2 (Trenutna Verzija)
+### v1.5.3 (Trenutna Verzija)
+* **Fix - Točno Prepoznavanje Višedijelnih Filmova (`Part One` / `Part Two`) i `Director's Cut` Godina (`get_name.py`, `tmdb.py`, `imdb.py`):**
+  - Riješen problem gdje je `guessit` iz naziva datoteka (npr. `Rebel.Moon.--.Part.One.Directors.Cut.2024...`, `Dune.Part.Two.2024...`, `Harry.Potter.and.the.Deathly.Hallows.Part.1...`) izbacivao oznaku `Part One` / `Part 1` u zasebno polje `part` i slao samo skraćeni naslov (`Rebel Moon`) na TMDb i IMDb pretragu.
+  - Riješen problem gdje je *Director's Cut* / *Extended* izdanje objavljeno godinu dana nakon izvornog filma (npr. `2024` u nazivu torrenta za film iz prosinca `2023`) zbog strogog `year` filtera na TMDb-u i izbačenog `Part One` pogrešno pogađalo drugi dio (*Part Two (2024)*).
+  - U `tmdb.py` i `imdb.py` dodana normalizacija oznaka dijelova (`Part One` ↔ `Part 1` ↔ `Part I`), pretraga s tolerancijom `±1` godine te stroga zaštita koja zabranjuje spajanje `Part 1` s `Part 2` kandidatima, uz filtriranje IMDb `Podcast Episode` / `TV Episode` unosa kod pretrage filmova.
+* **Feature - Pametno Automatsko Prepoznavanje Kategorija `Anime (31)`, `Dokumentarni (12)` i `Crtani (18)` (`THR.py`, `prep.py`, `App.tsx`):**
+  - **`Anime (31)`:** Automatski se odabire isključivo za pravi japanski anime (`Animation` žanr + izvorni jezik `ja` / zemlja podrijetla `JP` / `MAL` ili AniList `anime` zastavica). Zapadne animacije ostaju u svojim stvarnim kategorijama.
+  - **`Dokumentarni Filmovi (12)`:** Automatski se odabire isključivo za prave dokumentarce (`Documentary` žanr bez igranih/fikcijskih žanrova poput `Drama`, `Comedy`, `Action`, `Sci-Fi`, `Animation` i bez `mockumentary` oznaka).
+  - **`Crtani Filmovi (18)`:** Automatski se odabire isključivo za prave dječje/obiteljske crtiće (`Animation` + `Kids` za TV serije ili `Animation` + `Family`/`Kids` za filmove, bez `adult animation`/`sitcom`/`horror`/`thriller`/`crime` oznaka), dok animirane serije i filmovi za odrasle (npr. *The Simpsons*, *Family Guy*, *Rick and Morty*, *Arcane*, *KPop Demon Hunters*) ostaju u standardnim kategorijama `Filmovi` ili `Serije`.
+  - Prepoznata kategorija automatski se prikazuje u GUI izborniku odmah nakon analize stavke (uz mogućnost ručnog prebacivanja u bilo kojem trenutku prije uploada).
+
+### v1.5.2
 * **Fix - Automatsko Prepoznavanje `Dual Audio`, `MULTiSiNK` i `Dubbed` iz MediaInfo (`audio.py`, `get_name.py`):**
   - Riješen kritični bug u `backend/src/audio.py` gdje je `bloated_check` pri nailasku na ne-englesku audio traku (npr. `hr`, `sr`, `ko`) pozivao `langcodes.Language.display_name()` i pucao s `ModuleNotFoundError: No module named 'language_data'`, čime se tiho prekidao cijeli blok za detekciju višejezičnog zvuka.
   - Kada MediaInfo detektira **2 audio trake / jezika**, u generirani naziv torrenta automatski se ubacuje **`Dual Audio`** ispred rezolucije (npr. `KPop Demon Hunters Sing-Along 2025 Dual Audio 1080p NF WEB-DL AAC 5.1 AV1-PiPi`).

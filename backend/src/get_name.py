@@ -289,6 +289,18 @@ class NameManager:
         if not title:
             # Fallback if guessit fails completely
             title = basename
+        elif guess_data.get('part') and not guess_data.get('season') and not guess_data.get('episode'):
+            part_match = re.search(
+                r'\b(Part[.\s_-]+(?:One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten|I|II|III|IV|V|VI|VII|VIII|IX|X|\d+))\b',
+                basename,
+                flags=re.IGNORECASE,
+            )
+            if part_match:
+                part_str = re.sub(r'[.\s_-]+', ' ', part_match.group(1)).strip()
+            else:
+                part_str = f"Part {guess_data.get('part')}"
+            if part_str.lower() not in str(title).lower():
+                title = f"{title} {part_str}"
             
         actual_year = str(guess_data.get('year')) if guess_data.get('year') else None
         

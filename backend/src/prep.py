@@ -1395,6 +1395,12 @@ class Prep:
 
             meta['combined_genres'] = ', '.join(unique_genres) if unique_genres else ''
 
+            try:
+                from src.trackers.THR import THR
+                meta['thr_auto_category'] = THR.detect_special_category(meta)
+            except Exception:
+                meta['thr_auto_category'] = ''
+
         # return duplicate ids so I don't have to catch every site file
         # this has the other advantage of stringing imdb for this object
         meta['tmdb'] = meta.get('tmdb_id')
